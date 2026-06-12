@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-background: #fffbf7;
+  --color-foreground: #1f1d1a;
+  --color-foreground-muted: #5f5a52;
+  --color-foreground-subtle: #878076;
+
+  --color-primary: #ff7a1b;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f5ede4;
+  --color-secondary-muted: #eadfce;
+
+  --color-surface: #ffffff;
+  --color-surface-muted: #faf2e8;
+  --color-ring: #ff9b50;
+
+  --shadow-soft: 0 12px 36px rgba(35, 25, 12, 0.08);
+  --shadow-card: 0 8px 26px rgba(35, 25, 12, 0.06);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-sora);
+  --font-serif: var(--font-fraunces);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at 8% -10%, #ffe3cb 0, transparent 38%),
+    radial-gradient(circle at 95% -5%, #d7f0ff 0, transparent 32%),
+    linear-gradient(180deg, #fffbf7 0%, #fff8f2 40%, #fffbf7 100%);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-serif), serif;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: #ffd8b4;
+  color: #49240c;
 }
