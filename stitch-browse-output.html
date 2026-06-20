@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Browse Pets - PawHub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-low": "#f7f3ef",
+                        "background": "#fdf9f5",
+                        "surface-container-highest": "#e5e2de",
+                        "secondary-fixed-dim": "#ffb0cd",
+                        "on-primary-fixed": "#25005a",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "surface-variant": "#e5e2de",
+                        "surface-tint": "#732ee4",
+                        "surface-bright": "#fdf9f5",
+                        "surface-dim": "#ddd9d6",
+                        "on-surface-variant": "#4a4455",
+                        "inverse-surface": "#31302e",
+                        "outline-variant": "#ccc3d8",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#d2bbff",
+                        "outline": "#7b7487",
+                        "on-tertiary-fixed": "#341100",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#3e0022",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#ede0ff",
+                        "on-tertiary-fixed-variant": "#783200",
+                        "tertiary": "#843700",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "primary": "#630ed4",
+                        "on-secondary-container": "#600037",
+                        "secondary-fixed": "#ffd9e4",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#f1ede9",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#d2bbff",
+                        "surface-container-high": "#ebe7e4",
+                        "on-error": "#ffffff",
+                        "on-background": "#1c1c19",
+                        "secondary-container": "#fd56a7",
+                        "primary-fixed": "#eaddff",
+                        "tertiary-container": "#aa4900",
+                        "on-secondary-fixed-variant": "#8c0053",
+                        "inverse-on-surface": "#f4f0ec",
+                        "surface": "#fdf9f5",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#ffdecf",
+                        "on-surface": "#1c1c19",
+                        "secondary": "#b4136d",
+                        "primary-container": "#7c3aed",
+                        "error": "#ba1a1a"
+                    },
+                    borderRadius: {
+                        DEFAULT: "1rem",
+                        lg: "2rem",
+                        xl: "3rem",
+                        full: "9999px"
+                    },
+                    spacing: {
+                        "section-gap-mobile": "64px",
+                        "section-gap-desktop": "120px",
+                        "card-padding": "32px",
+                        "grid-gutter": "24px",
+                        "base": "8px",
+                        "container-max": "1280px"
+                    },
+                    fontFamily: {
+                        "display-lg": ["Outfit"],
+                        "body-md": ["Outfit"],
+                        "headline-lg": ["Outfit"],
+                        "display-lg-mobile": ["Outfit"],
+                        "label-md": ["Outfit"],
+                        "headline-md": ["Outfit"],
+                        "body-lg": ["Outfit"]
+                    },
+                    fontSize: {
+                        "display-lg": ["56px", { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "body-md": ["16px", { lineHeight: "1.6", fontWeight: "400" }],
+                        "headline-lg": ["32px", { lineHeight: "1.2", fontWeight: "600" }],
+                        "display-lg-mobile": ["36px", { lineHeight: "1.2", fontWeight: "700" }],
+                        "label-md": ["14px", { lineHeight: "1.2", letterSpacing: "0.05em", fontWeight: "600" }],
+                        "headline-md": ["24px", { lineHeight: "1.3", fontWeight: "600" }],
+                        "body-lg": ["18px", { lineHeight: "1.6", fontWeight: "400" }]
+                    }
+                }
+            }
+        };
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 0.5px solid rgba(255, 255, 255, 0.4);
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, theme('colors.primary'), theme('colors.secondary'));
+            box-shadow: 0 4px 14px 0 rgba(99, 14, 212, 0.39);
+        }
+        .btn-gradient:hover {
+            box-shadow: 0 6px 20px rgba(99, 14, 212, 0.23);
+            transform: translateY(-1px);
+        }
+        .text-gradient {
+            background: linear-gradient(to right, theme('colors.primary'), theme('colors.secondary-container'));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card-shadow {
+            box-shadow: 0 10px 40px rgba(99, 14, 212, 0.05);
+        }
+        .card-hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 50px rgba(99, 14, 212, 0.1);
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+        
+        .floating-orb {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, theme('colors.primary-fixed-dim') 0%, transparent 70%);
+            opacity: 0.4;
+            filter: blur(40px);
+            animation: float 10s infinite ease-in-out alternate;
+            z-index: -1;
+        }
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -20px) scale(1.1); }
+            100% { transform: translate(-20px, 30px) scale(0.9); }
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased overflow-x-hidden min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-white/70 backdrop-blur-xl dark:bg-inverse-surface/70 rounded-full mt-4 mx-auto max-w-container-max border border-white/20 shadow-lg shadow-xl sticky top-4 z-50 flex justify-between items-center px-8 py-3 w-[95%]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[32px]">pets</span>
+<span class="font-display-lg text-headline-md font-bold text-on-surface dark:text-on-primary-fixed">PawHub</span>
+</div>
+<div class="hidden md:flex items-center gap-6">
+<a class="font-display-lg text-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-highest/50 rounded-full transition-all px-4 py-2 scale-95 active:scale-90 duration-200" href="#">Home</a>
+<a class="font-display-lg text-label-md text-primary font-bold border-b-2 border-primary pb-1 hover:bg-surface-container-highest/50 rounded-full transition-all px-4 py-2 scale-95 active:scale-90 duration-200" href="#">Browse Pets</a>
+<a class="font-display-lg text-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-highest/50 rounded-full transition-all px-4 py-2 scale-95 active:scale-90 duration-200" href="#">Pet Products</a>
+<a class="font-display-lg text-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-highest/50 rounded-full transition-all px-4 py-2 scale-95 active:scale-90 duration-200" href="#">Post Listing</a>
+<a class="font-display-lg text-label-md text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-highest/50 rounded-full transition-all px-4 py-2 scale-95 active:scale-90 duration-200" href="#">Verify Seller</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-primary dark:text-primary-fixed-dim hover:bg-surface-container-highest/50 transition-all scale-95 active:scale-90 duration-200">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-primary">S</button>
+</div>
+</nav>
+<main class="flex-grow flex flex-col relative z-0">
+<!-- Hero Section -->
+<section class="relative pt-section-gap-mobile md:pt-24 pb-32 px-4 md:px-8 max-w-container-max mx-auto w-full flex flex-col items-center text-center fade-in-up stagger-1 z-10 overflow-hidden rounded-b-[4rem]">
+<!-- Decorative Background -->
+<div class="absolute inset-0 bg-gradient-to-b from-surface-container-low to-surface/0 -z-20 rounded-b-[4rem]"></div>
+<div class="floating-orb w-[400px] h-[400px] top-[-100px] left-[-100px] bg-primary-fixed-dim/30"></div>
+<div class="floating-orb w-[500px] h-[500px] bottom-[-150px] right-[-100px] bg-secondary-fixed-dim/20" style="animation-delay: -5s;"></div>
+<!-- Floating Icons -->
+<div class="absolute top-20 left-[20%] text-primary/30 animate-pulse" style="animation-duration: 3s;"><span class="material-symbols-outlined text-[40px]" style="font-variation-settings: 'FILL' 1;">pets</span></div>
+<div class="absolute bottom-40 right-[15%] text-secondary/30 animate-pulse" style="animation-duration: 4s; animation-delay: 1s;"><span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 1;">favorite</span></div>
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg mb-6 max-w-3xl leading-tight">
+<span class="text-gradient">Find Your Best Friend</span>
+</h1>
+<p class="font-body-md text-body-lg text-on-surface-variant max-w-2xl mx-auto mb-12">
+                Choose purchase or adoption, filter by pet type and location, and search trusted listings.
+            </p>
+<!-- Filter Panel -->
+<div class="glass-panel w-full max-w-4xl mx-auto rounded-[2rem] p-6 md:p-8 shadow-xl flex flex-col gap-6 relative z-30">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<!-- Location -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-left">Location</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">location_on</span>
+<input class="w-full bg-white/80 border border-surface-variant rounded-xl py-3 pl-10 pr-4 text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="City or Zip" type="text"/>
+</div>
+</div>
+<!-- Pet Type -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-left">Pet Type</label>
+<div class="relative">
+<select class="w-full bg-white/80 border border-surface-variant rounded-xl py-3 px-4 text-body-md focus:outline-none focus:ring-2 focus:ring-primary appearance-none transition-all cursor-pointer">
+<option value="">Any Type</option>
+<option value="dog">Dogs</option>
+<option value="cat">Cats</option>
+<option value="bird">Birds</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Breed -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-left">Breed</label>
+<div class="relative">
+<input class="w-full bg-white/80 border border-surface-variant rounded-xl py-3 px-4 text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all" placeholder="Any Breed" type="text"/>
+</div>
+</div>
+<!-- Price Range -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-left">Price</label>
+<div class="relative">
+<select class="w-full bg-white/80 border border-surface-variant rounded-xl py-3 px-4 text-body-md focus:outline-none focus:ring-2 focus:ring-primary appearance-none transition-all cursor-pointer">
+<option value="">Any Price</option>
+<option value="free">Free (Adoption)</option>
+<option value="under500">Under ₹500</option>
+<option value="over500">Over ₹500</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col md:flex-row justify-between items-center gap-4 mt-2 pt-4 border-t border-surface-variant/50">
+<div class="flex flex-wrap gap-4">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="rounded text-primary focus:ring-primary border-outline-variant w-5 h-5 transition-all" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Adoption Only</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input checked="" class="rounded text-primary focus:ring-primary border-outline-variant w-5 h-5 transition-all" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Verified Sellers</span>
+</label>
+</div>
+<button class="btn-gradient w-full md:w-auto px-8 py-3 rounded-full text-white font-label-md text-label-md tracking-wide transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">search</span>
+                        Apply Filters
+                    </button>
+</div>
+</div>
+</section>
+<!-- Grid Section -->
+<section class="max-w-container-max mx-auto px-4 md:px-8 w-full pb-section-gap-desktop fade-in-up stagger-2 relative z-20 -mt-16">
+<div class="flex justify-between items-center mb-8">
+<h2 class="font-headline-md text-headline-md text-on-surface">32 Available Pets</h2>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="font-label-md text-label-md">Sort by:</span>
+<select class="bg-transparent font-body-md text-body-md font-semibold text-primary focus:outline-none cursor-pointer">
+<option>Newest First</option>
+<option>Price: Low to High</option>
+<option>Distance</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-grid-gutter">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-[1.5rem] overflow-hidden card-shadow card-hover-lift flex flex-col group">
+<div class="relative h-64 overflow-hidden rounded-t-[1.5rem] m-2">
+<img alt="A playful Beagle puppy running in a lush green grassy field on a bright sunny day, holding a small red ball in its mouth. The lighting is natural and vibrant, highlighting the puppy's energetic mood and the soft white and brown fur, fitting a cheerful, premium light-mode pet marketplace aesthetic." class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A playful Beagle puppy running in a lush green grassy field on a bright sunny day, holding a small red ball in its mouth. The lighting is natural and vibrant, highlighting the puppy's energetic mood and the soft white and brown fur, fitting a cheerful, premium light-mode pet marketplace aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0Dvt7pEHtNol_kzMgt7t8CBpFUpJIF2zRGAHx4LMECQIuQyBT5lmKitWF4O4KUahk1XC3V1NOPlLTkpZmTAHTa7BLKNoC80Mxy5psi1hapek8Fqr370CY28dUpkFhZCC2mgCvg4q_HWWTWI3CGBK1yrhzyI6KrGDfJhSrdcftRe-xdIuikMcGpH7owtGzyKl2_8VYA79ubQXFCsstNbcScPiCOsfmJ1kqfktuMO4ma-DKWA5aSCnoaxxoRuYw42YcuLtxIg5q-WI"/>
+<button class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-outline hover:text-secondary hover:bg-white transition-all shadow-sm z-10">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">favorite</span>
+</button>
+<div class="absolute bottom-4 left-4 glass-panel px-3 py-1.5 rounded-full font-label-md text-label-md font-bold text-on-surface z-10 shadow-sm">
+                            ₹15,000
+                        </div>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-lg text-[20px] font-bold text-on-surface leading-tight">Golden Retriever Mix</h3>
+<span class="bg-secondary-fixed/50 text-on-secondary-container px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap">8 mo</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                            Mumbai, MH
+                        </p>
+<div class="flex flex-wrap gap-2 mb-6 mt-auto">
+<span class="bg-surface-container-high px-3 py-1 rounded-full text-xs font-semibold text-on-surface-variant">Dog</span>
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span> Verified
+                            </span>
+</div>
+</div>
+<button class="w-full py-4 bg-surface-container-high text-primary font-label-md text-label-md font-bold uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                        View Details
+                    </button>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-[1.5rem] overflow-hidden card-shadow card-hover-lift flex flex-col group">
+<div class="relative h-64 overflow-hidden rounded-t-[1.5rem] m-2">
+<img alt="A close-up portrait of a relaxed orange and white tabby cat resting on a soft blue patterned blanket. The cat has its eyes half-closed in a serene, content expression. Soft, diffused indoor lighting creates a warm, comforting mood suitable for a high-end, caring pet adoption interface." class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A close-up portrait of a relaxed orange and white tabby cat resting on a soft blue patterned blanket. The cat has its eyes half-closed in a serene, content expression. Soft, diffused indoor lighting creates a warm, comforting mood suitable for a high-end, caring pet adoption interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS-nmGNg9WAHOTH8-Ws_j43j6679EsQxYGbZQb7ro9RLA8NqO_wJD7Nx1e5EESoIC4w6FwQijX0PLVGVNoupA2U_HYqnPNaDsbvq8iZLLzLer1OoV1CqgiJ7rI7-oLqNrckSYw2aMxAGwCJlxnzhBwlzWfeVK2XK2NFnn9cCu_VFtvXfSIBtHUci3quGIrVSuFMPnEdmJ63KoNXXSBKVZKa0lLcvOpONz5v4kakxSEDq1ZupJ7LwgVx0FEb2kSbTVaafkuoRBYMqI"/>
+<button class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-outline hover:text-secondary hover:bg-white transition-all shadow-sm z-10">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">favorite</span>
+</button>
+<div class="absolute bottom-4 left-4 glass-panel px-3 py-1.5 rounded-full font-label-md text-label-md font-bold text-on-surface z-10 shadow-sm flex items-center gap-1">
+                            ₹8,255
+                        </div>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-lg text-[20px] font-bold text-on-surface leading-tight">Luna - Bengal</h3>
+<span class="bg-secondary-fixed/50 text-on-secondary-container px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap">6 mo</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                            Bengaluru, KA
+                        </p>
+<div class="flex flex-wrap gap-2 mb-6 mt-auto">
+<span class="bg-surface-container-high px-3 py-1 rounded-full text-xs font-semibold text-on-surface-variant">Cat</span>
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span> Verified
+                            </span>
+</div>
+</div>
+<button class="w-full py-4 bg-surface-container-high text-primary font-label-md text-label-md font-bold uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                        View Details
+                    </button>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest rounded-[1.5rem] overflow-hidden card-shadow card-hover-lift flex flex-col group">
+<div class="relative h-64 overflow-hidden rounded-t-[1.5rem] m-2">
+<img alt="An adorable fluffy white Pomeranian dog sitting attentively on a light-colored hardwood floor. The dog is looking slightly upward with bright, engaging eyes. The background is a minimalist, softly lit modern living space, emphasizing cleanliness and premium pet care aesthetics in light mode." class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="An adorable fluffy white Pomeranian dog sitting attentively on a light-colored hardwood floor. The dog is looking slightly upward with bright, engaging eyes. The background is a minimalist, softly lit modern living space, emphasizing cleanliness and premium pet care aesthetics in light mode." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdMOaDNyeFFuF3j7LHpZJQ5R2km2Dd1gc8jdQrG9zaOI9YVbzeq4CyNGTZ-e010SXpPRq59MXd13yntmzjKqXNuB686Spbqum5iLj70jkUM3RlGdNu2HBeKWcC6m6Z909BEIKueg9IqR3g59DEGmGNg8nKZFMJC4wGrZYM5DiGQhJQArieeAdUgcvemXBYQhIOEOCf3efcaH8Y3oL6EYWqPRCKH1oQ1wUQIzChB8QAH4AABLVVKeSaswLnO5P08Q1mn1kA7VOfEOM"/>
+<button class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-outline hover:text-secondary hover:bg-white transition-all shadow-sm z-10">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">favorite</span>
+</button>
+<div class="absolute bottom-4 left-4 bg-tertiary-fixed text-on-tertiary-fixed-variant px-3 py-1.5 rounded-full font-label-md text-label-md font-bold shadow-sm flex items-center gap-1 z-10">
+                            Free (Rehome)
+                        </div>
+</div>
+<div class="p-6 flex flex-col flex-grow">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-lg text-[20px] font-bold text-on-surface leading-tight">Snowball - Pom</h3>
+<span class="bg-secondary-fixed/50 text-on-secondary-container px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap">2 yrs</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                            Indore, MP
+                        </p>
+<div class="flex flex-wrap gap-2 mb-6 mt-auto">
+<span class="bg-surface-container-high px-3 py-1 rounded-full text-xs font-semibold text-on-surface-variant">Dog</span>
+</div>
+</div>
+<button class="w-full py-4 bg-surface-container-high text-primary font-label-md text-label-md font-bold uppercase tracking-wider group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                        View Details
+                    </button>
+</div>
+</div>
+<div class="mt-12 flex justify-center">
+<button class="px-8 py-3 rounded-full border-2 border-primary text-primary font-label-md text-label-md hover:bg-primary/5 transition-colors font-bold">
+                    Load More Listings
+                </button>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container dark:bg-surface-dim rounded-t-xl w-full bg-surface-container-high dark:bg-surface-container-highest flat w-full py-section-gap-desktop px-grid-gutter flex flex-col items-center gap-base mt-auto">
+<div class="font-display-lg text-headline-md text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[32px]">pets</span>
+            PawHub
+        </div>
+<div class="flex flex-wrap justify-center gap-6 mb-8 max-w-2xl">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#">About Us</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#">Find a Pet</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#">Success Stories</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#">Safety &amp; Trust</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#">Terms of Service</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-secondary hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#">Privacy Policy</a>
+</div>
+<div class="font-body-md text-body-md text-secondary dark:text-secondary-fixed text-center opacity-70">
+            © 2024 PawHub Marketplace. Premium care for every companion.
+        </div>
+</footer>
+</body></html>

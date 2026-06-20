@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { hashPassword } from "@/lib/password";
+import { authRateLimit } from "@/lib/ratelimit";
 import { connectToDatabase } from "@/server/db/connect";
 import { OtpRequestModel } from "@/server/models/otp-request";
 import { UserModel } from "@/server/models/user";
@@ -20,6 +21,12 @@ const registerSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await authRateLimit.limit(`register_${ip}`);
+    if (!success) {
+      return NextResponse.json({ message: "Too many requests. Try again later." }, { status: 429 });
+    }
+
     const json = await request.json();
     const parsed = registerSchema.safeParse(json);
 

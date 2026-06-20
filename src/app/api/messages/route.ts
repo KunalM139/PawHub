@@ -7,6 +7,8 @@ import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/server/db/connect";
 import { ListingModel } from "@/server/models/listing";
 import { MessageModel } from "@/server/models/message";
+import { NotificationModel } from "@/server/models/notification";
+import { chatRateLimit } from "@/lib/ratelimit";
 
 const sendMessageSchema = z.object({
   listingId: z.string().min(1),
@@ -34,15 +36,26 @@ export async function GET(request: Request) {
       query.listingId = listingId;
     }
 
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const skip = (page - 1) * limit;
+
+    const total = await MessageModel.countDocuments(query);
+    const totalPages = Math.ceil(total / limit);
+
     const messages = await MessageModel.find(query)
       .sort({ createdAt: -1 })
-      .limit(80)
+      .skip(skip)
+      .limit(limit)
       .populate("senderId", "name")
       .populate("receiverId", "name")
       .populate("listingId", "title")
       .lean();
 
-    return NextResponse.json({ messages }, { status: 200 });
+    return NextResponse.json({ 
+      messages,
+      pagination: { total, page, limit, totalPages }
+    }, { status: 200 });
   } catch {
     return NextResponse.json({ message: "Unable to fetch messages." }, { status: 500 });
   }
@@ -50,6 +63,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await chatRateLimit.limit(`chat_${ip}`);
+    if (!success) {
+      return NextResponse.json({ message: "Too many messages sent. Please slow down." }, { status: 429 });
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
@@ -90,7 +109,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Listing not found." }, { status: 404 });
     }
 
-    const message = await MessageModel.create({
+    const newMessage = await MessageModel.create({
       listingId: parsed.data.listingId,
       senderId: session.user.id,
       receiverId: parsed.data.receiverId,
@@ -98,7 +117,15 @@ export async function POST(request: Request) {
       status: "sent",
     });
 
-    return NextResponse.json({ message }, { status: 201 });
+    await NotificationModel.create({
+      userId: parsed.data.receiverId,
+      title: "New Inquiry Received",
+      message: `You have a new message: "${parsed.data.body.substring(0, 50)}${parsed.data.body.length > 50 ? '...' : ''}"`,
+      type: "message",
+      link: "/seller-dashboard/messages"
+    });
+
+    return NextResponse.json({ message: "Message sent", data: newMessage }, { status: 201 });
   } catch {
     return NextResponse.json({ message: "Unable to send message." }, { status: 500 });
   }

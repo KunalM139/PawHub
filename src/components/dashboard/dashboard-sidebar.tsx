@@ -4,18 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
-import {
-  ChevronLeft,
-  LogOut,
-  PawPrint,
-  type LucideIcon,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type SidebarItem = {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: string;
   badge?: string;
 };
 
@@ -55,118 +49,112 @@ export function DashboardSidebar({
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-200 bg-white transition-all duration-300",
-        collapsed ? "w-[4.5rem]" : "w-64",
+        "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[var(--color-outline-variant)]/30 bg-[var(--color-surface-container-low)] transition-all duration-300",
+        collapsed ? "w-[4.5rem]" : "w-64 lg:w-[280px]"
       )}
     >
       {/* Logo & Collapse */}
-      <div className={cn("relative flex h-16 items-center px-4", collapsed && "px-0 justify-center")}>
-        <Link href="/" className="flex items-center gap-2.5 overflow-hidden">
-          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-white shadow-sm">
-            <PawPrint className="size-[18px]" />
-          </span>
+      <div className={cn("p-6 flex items-center gap-3 border-b border-[var(--color-outline-variant)]/30 relative", collapsed && "p-4 justify-center")}>
+        <Link href="/" className="flex items-center gap-3 overflow-hidden">
+          <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white shrink-0">
+            <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: "'FILL' 1" }}>pets</span>
+          </div>
           {!collapsed && (
-            <span className="text-xl font-black tracking-tight text-slate-900">
-              PawHub
-            </span>
+            <h1 className="text-[24px] leading-[1.3] font-semibold text-[var(--color-primary)] tracking-tight">PawHub</h1>
           )}
         </Link>
         <button
           type="button"
           onClick={onToggle}
           className={cn(
-            "absolute -right-3.5 top-5 z-50 hidden size-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:bg-slate-50 hover:text-slate-600 sm:inline-flex",
-            collapsed && "rotate-180",
+            "absolute -right-3.5 top-6 z-50 hidden size-7 items-center justify-center rounded-full border border-[var(--color-outline-variant)]/30 bg-[var(--color-surface)] text-[var(--color-on-surface-variant)] shadow-sm transition hover:bg-[var(--color-surface-container-high)] lg:inline-flex",
+            collapsed && "rotate-180"
           )}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <ChevronLeft className="size-4" />
+          <span className="material-symbols-outlined text-[16px]">chevron_left</span>
         </button>
       </div>
 
       {/* User Info */}
-      <div className={cn("mx-3 mb-4 mt-2 rounded-xl bg-slate-50 border border-slate-100 px-3 py-3 transition-all", collapsed && "mx-0 px-0 flex items-center justify-center border-none bg-transparent")}>
-        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          {userImage ? (
-            <img
-              src={userImage}
-              alt={userName}
-              className="size-9 shrink-0 rounded-full object-cover ring-2 ring-white"
-            />
-          ) : (
-            <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-orange-400 text-xs font-bold text-white shadow-sm">
-              {initials}
-            </span>
-          )}
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-slate-900">
-                {userName}
-              </p>
-              <p className="truncate text-[11px] font-medium capitalize text-slate-500">
-                {userRole === "verifiedSeller" ? "Verified Seller" : userRole}
-              </p>
+      <div className={cn("p-6 flex items-center gap-3 border-b border-[var(--color-outline-variant)]/30", collapsed && "p-4 justify-center")}>
+        {userImage ? (
+          <img
+            src={userImage}
+            alt={userName}
+            className="w-10 h-10 shrink-0 rounded-full object-cover ring-2 ring-white"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-[var(--color-secondary-container)] flex items-center justify-center text-white shrink-0 font-bold">
+            {initials}
+          </div>
+        )}
+        {!collapsed && (
+          <div className="min-w-0">
+            <h2 className="text-[14px] leading-[1.2] tracking-[0.05em] font-semibold leading-tight text-[var(--color-on-surface)] truncate">
+              {userName}
+            </h2>
+            <div className="text-[var(--color-on-surface-variant)] text-xs truncate capitalize">
+              {userRole === "verifiedSeller" ? "Verified Seller" : userRole}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2">
+      <nav className="flex-1 px-4 py-4 space-y-6 overflow-y-auto">
         {groups.map((group, gIdx) => (
-          <div key={gIdx} className={cn(gIdx > 0 && "mt-6")}>
+          <div key={gIdx}>
             {group.title && !collapsed && (
-              <p className="mb-2 px-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
+              <h3 className="px-4 mb-2 text-[10px] font-bold text-[var(--color-outline)] uppercase tracking-wider">
                 {group.title}
-              </p>
+              </h3>
             )}
             {group.title && collapsed && (
-              <div className="mx-auto mb-2 h-px w-6 bg-slate-200" />
+              <div className="mx-auto mb-2 h-px w-6 bg-[var(--color-outline-variant)]/30" />
             )}
-            <ul className="space-y-0.5">
+            <div className="space-y-1">
               {group.items.map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
+                const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
                 return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      title={collapsed ? item.label : undefined}
-                      className={cn(
-                        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-150",
-                        isActive
-                          ? "bg-orange-50 text-orange-600"
-                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
-                        collapsed && "justify-center px-0",
-                      )}
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={collapsed ? item.label : undefined}
+                    className={cn(
+                      "nav-item flex items-center gap-3 rounded-lg text-[14px] leading-[1.2] tracking-[0.05em] font-semibold transition-all duration-200",
+                      collapsed ? "justify-center p-2" : "px-4 py-2",
+                      isActive
+                        ? "active bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                        : "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-primary)]/5 hover:translate-x-1"
+                    )}
+                  >
+                    <span
+                      className={cn("material-symbols-outlined text-[20px]", isActive && "active")}
+                      style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
                     >
-                      <Icon
-                        className={cn(
-                          "size-[18px] shrink-0 transition-colors",
-                          isActive ? "text-orange-500" : "text-slate-400 group-hover:text-slate-600",
+                      {item.icon}
+                    </span>
+                    {!collapsed && (
+                      <>
+                        <span className="truncate">{item.label}</span>
+                        {item.badge && (
+                          <span className="ml-auto bg-[var(--color-tertiary-fixed)] text-[var(--color-on-tertiary-fixed)] text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            {item.badge}
+                          </span>
                         )}
-                      />
-                      {!collapsed && (
-                        <>
-                          <span className="truncate">{item.label}</span>
-                          {item.badge && (
-                            <span className="ml-auto rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-black text-orange-700">
-                              {item.badge}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </Link>
-                  </li>
+                      </>
+                    )}
+                  </Link>
                 );
               })}
-            </ul>
+            </div>
           </div>
         ))}
       </nav>
 
       {/* Logout */}
-      <div className="border-t border-slate-100 p-3">
+      <div className="p-4 border-t border-[var(--color-outline-variant)]/30">
         <button
           type="button"
           disabled={isLoggingOut}
@@ -175,12 +163,20 @@ export function DashboardSidebar({
             void signOut({ callbackUrl: "/" });
           }}
           className={cn(
-            "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50",
-            collapsed && "justify-center px-0",
+            "nav-item flex w-full items-center gap-3 rounded-lg text-[var(--color-on-surface)] text-sm font-semibold transition-all duration-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50",
+            collapsed ? "justify-center p-2" : "px-4 py-2 hover:translate-x-1"
           )}
         >
-          <LogOut className="size-[18px] shrink-0" />
-          {!collapsed && <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>}
+          {collapsed ? (
+            <span className="material-symbols-outlined text-[20px]">logout</span>
+          ) : (
+            <>
+              <div className="w-6 h-6 rounded-full bg-[var(--color-on-surface)] text-[var(--color-surface)] flex items-center justify-center text-[10px] font-bold">
+                {initials[0] || 'L'}
+              </div>
+              <span className="truncate">{isLoggingOut ? "Logging out..." : "Logout"}</span>
+            </>
+          )}
         </button>
       </div>
     </aside>

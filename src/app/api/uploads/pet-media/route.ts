@@ -20,6 +20,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "File is required." }, { status: 400 });
     }
 
+    const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "video/mp4", "video/webm"];
+    if (!allowedMimeTypes.includes(file.type.toLowerCase())) {
+      return NextResponse.json({ message: "Invalid file type. Only JPG, PNG, WEBP, and MP4/WEBM are allowed." }, { status: 400 });
+    }
+
     if (resourceType !== "image" && resourceType !== "video") {
       return NextResponse.json({ message: "Invalid resource type." }, { status: 400 });
     }

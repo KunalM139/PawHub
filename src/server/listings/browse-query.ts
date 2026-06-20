@@ -19,6 +19,7 @@ export type BrowseFilters = {
   adoptionOnly: boolean;
   verifiedOnly: boolean;
   sort: ListingSortValue;
+  limit: number;
 };
 
 function getFirstValue(value: string | string[] | undefined): string {
@@ -70,6 +71,10 @@ export function parseBrowseFilters(
   const sort: ListingSortValue =
     sortRaw === "price_low_high" || sortRaw === "price_high_low" || sortRaw === "age_low_high" || sortRaw === "age_high_low" ? sortRaw : "latest";
 
+  let limit = toNumberOrNull(get("limit")) ?? 15;
+  if (limit <= 0) limit = 15;
+  if (limit > 100) limit = 100;
+
   return {
     q,
     petCategory: petCategoryRaw === "dog" || petCategoryRaw === "cat" ? petCategoryRaw : "",
@@ -88,6 +93,7 @@ export function parseBrowseFilters(
     adoptionOnly: toBoolean(get("adoptionOnly")),
     verifiedOnly: toBoolean(get("verifiedOnly")),
     sort,
+    limit,
   };
 }
 

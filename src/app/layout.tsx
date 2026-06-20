@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { Fraunces, Sora } from "next/font/google";
+import { Fraunces, Sora, Outfit } from "next/font/google";
 
 import { AuthSessionProvider } from "@/components/providers/session-provider";
+import { SocketProvider } from "@/components/providers/socket-provider";
+import { Toaster } from "sonner";
 import { siteConfig } from "@/config/site";
 
 import "./globals.css";
@@ -13,6 +15,11 @@ const sora = Sora({
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
+  subsets: ["latin"],
+});
+
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
@@ -43,10 +50,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${sora.variable} ${fraunces.variable} h-full antialiased`}>
+    <html lang="en" className={`${sora.variable} ${fraunces.variable} ${outfit.variable} h-full antialiased`}>
       <body className="min-h-full bg-[var(--color-background)] text-[var(--color-foreground)]">
+        {/* Material Symbols Outlined Font */}
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL,GRAD,opsz@100..700,0..1,-50..200,24&display=swap" rel="stylesheet" />
+        
         <AuthSessionProvider>
-          {children}
+          <SocketProvider>
+            {children}
+          </SocketProvider>
+          <Toaster richColors position="top-right" />
         </AuthSessionProvider>
       </body>
     </html>

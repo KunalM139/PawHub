@@ -19,17 +19,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "File is required." }, { status: 400 });
     }
 
-    const isImage = file.type.startsWith("image/");
-    const isPdf = file.type === "application/pdf";
-
-    if (!isImage && !isPdf) {
-      return NextResponse.json(
-        {
-          message: "Only image and PDF files are allowed.",
-        },
-        { status: 400 },
-      );
+    const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"];
+    if (!allowedMimeTypes.includes(file.type.toLowerCase())) {
+      return NextResponse.json({ message: "Invalid file type. Only JPG, PNG, WEBP, and PDF are allowed." }, { status: 400 });
     }
+
+    const isImage = file.type.startsWith("image/");
 
     const maxSize = 12 * 1024 * 1024;
     if (file.size > maxSize) {

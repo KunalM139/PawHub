@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { generateOtpCode, getOtpExpiry, sendOtpMessage } from "@/lib/otp";
 import { connectToDatabase } from "@/server/db/connect";
 import { UserModel } from "@/server/models/user";
+import { otpRateLimit } from "@/lib/ratelimit";
 
 const phoneRegex = /^[0-9+][0-9\s-]{7,19}$/;
 
@@ -15,6 +16,12 @@ const sendOtpSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await otpRateLimit.limit(`otp_send_${ip}`);
+    if (!success) {
+      return NextResponse.json({ message: "Too many OTP requests. Try again later." }, { status: 429 });
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {

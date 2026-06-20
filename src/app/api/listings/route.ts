@@ -19,14 +19,24 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const mine = searchParams.get("mine") === "true";
 
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const skip = (page - 1) * limit;
+
     if (!mine) {
       const filters = parseBrowseFilters(searchParams);
       const query = buildPublicListingQuery(filters);
       const sort = buildPublicListingSort(filters);
 
-      const listings = await ListingModel.find(query).sort(sort).limit(60).lean();
+      const total = await ListingModel.countDocuments(query);
+      const totalPages = Math.ceil(total / limit);
 
-      return NextResponse.json({ listings }, { status: 200 });
+      const listings = await ListingModel.find(query).sort(sort).skip(skip).limit(limit).lean();
+
+      return NextResponse.json({ 
+        listings, 
+        pagination: { total, page, limit, totalPages } 
+      }, { status: 200 });
     }
 
     const session = await getServerSession(authOptions);
@@ -34,11 +44,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
 
+    const total = await ListingModel.countDocuments({ sellerId: session.user.id });
+    const totalPages = Math.ceil(total / limit);
+
     const listings = await ListingModel.find({ sellerId: session.user.id })
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
 
-    return NextResponse.json({ listings }, { status: 200 });
+    return NextResponse.json({ 
+      listings, 
+      pagination: { total, page, limit, totalPages } 
+    }, { status: 200 });
   } catch {
     return NextResponse.json(
       {

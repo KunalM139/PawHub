@@ -1,21 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  BarChart3,
-  Heart,
-  Home,
-  LayoutDashboard,
-  ListChecks,
-  MessageSquare,
-  Package,
-  PawPrint,
-  Settings,
-  ShieldCheck,
-  ShoppingBag,
-  Store,
-  User,
-} from "lucide-react";
+
 
 import {
   DashboardSidebar,
@@ -26,67 +12,83 @@ import { cn } from "@/lib/utils";
 
 const petOwnerNav: SidebarGroup[] = [
   {
+    title: "Activity",
     items: [
-      { label: "Home", href: "/", icon: Home },
-      { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/dashboard", icon: "dashboard" },
+      { label: "Favorites", href: "/dashboard/favorites", icon: "favorite" },
+      { label: "Messages", href: "/dashboard/messages", icon: "mail" },
     ],
   },
   {
-    title: "Pets",
+    title: "My Pets",
     items: [
-      { label: "Browse Pets", href: "/dashboard/pets", icon: PawPrint },
-      { label: "Favorites", href: "/dashboard/favorites", icon: Heart },
-    ],
-  },
-  {
-    title: "Listings",
-    items: [
-      { label: "My Listings", href: "/dashboard/my-listings", icon: ListChecks },
-      { label: "Inquiries", href: "/dashboard/inquiries", icon: MessageSquare },
+      { label: "Adoption Inquiries", href: "/dashboard/inquiries", icon: "chat_bubble_outline" },
+      { label: "My Listings", href: "/dashboard/my-listings", icon: "pets" },
     ],
   },
   {
     title: "Shop",
     items: [
-      { label: "Pet Shop", href: "/dashboard/shop", icon: ShoppingBag, badge: "Soon" },
+      { label: "Pet Products", href: "/dashboard/shop", icon: "shopping_cart" },
+      { label: "My Orders", href: "/dashboard/orders", icon: "shopping_bag" },
     ],
   },
   {
     title: "Account",
     items: [
-      { label: "Messages", href: "/dashboard/messages", icon: MessageSquare },
-      { label: "Profile", href: "/dashboard/profile", icon: User },
+      { label: "Profile", href: "/dashboard/profile", icon: "settings" },
+      { label: "Addresses", href: "/dashboard/addresses", icon: "location_on" },
+    ],
+  },
+  {
+    title: "Navigation",
+    items: [
+      { label: "Home", href: "/", icon: "home" },
     ],
   },
 ];
 
 const sellerNav: SidebarGroup[] = [
   {
+    title: "Overview",
     items: [
-      { label: "Home", href: "/", icon: Home },
-      { label: "Overview", href: "/seller-dashboard", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/seller-dashboard", icon: "dashboard" },
+      { label: "Analytics", href: "/seller-dashboard/analytics", icon: "monitoring" },
     ],
   },
   {
-    title: "Catalog",
+    title: "Sales & Shop",
     items: [
-      { label: "Pet Listings", href: "/seller-dashboard/pet-listings", icon: PawPrint },
-      { label: "Products", href: "/seller-dashboard/product-listings", icon: Package, badge: "Soon" },
-      { label: "Inquiries", href: "/seller-dashboard/inquiries", icon: MessageSquare },
+      { label: "Inquiries", href: "/seller-dashboard/inquiries", icon: "chat_bubble_outline" },
+      { label: "Messages", href: "/seller-dashboard/messages", icon: "mail" },
+      { label: "Shop Orders", href: "/seller-dashboard/orders", icon: "shopping_bag" },
     ],
   },
   {
-    title: "Business",
+    title: "Inventory",
     items: [
-      { label: "Messages", href: "/seller-dashboard/messages", icon: MessageSquare },
-      { label: "Analytics", href: "/seller-dashboard/analytics", icon: BarChart3 },
+      { label: "Pet Listings", href: "/seller-dashboard/pet-listings", icon: "pets" },
+      { label: "Products", href: "/seller-dashboard/product-listings", icon: "inventory_2" },
+    ],
+  },
+  {
+    title: "Buying",
+    items: [
+      { label: "Pet Products", href: "/dashboard/shop", icon: "shopping_cart" },
+      { label: "My Purchases", href: "/dashboard/orders", icon: "receipt_long" },
     ],
   },
   {
     title: "Account",
     items: [
-      { label: "Verification", href: "/seller-dashboard/verification", icon: ShieldCheck },
-      { label: "Settings", href: "/seller-dashboard/settings", icon: Settings },
+      { label: "Settings", href: "/seller-dashboard/settings", icon: "settings" },
+      { label: "Verification", href: "/seller-dashboard/verification", icon: "verified_user" },
+    ],
+  },
+  {
+    title: "Navigation",
+    items: [
+      { label: "Home", href: "/", icon: "home" },
     ],
   },
 ];
@@ -129,7 +131,7 @@ export function DashboardShell({
   const navGroups = userType === "seller" ? sellerNav : petOwnerNav;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="font-outfit home-theme bg-[var(--color-surface)] text-[var(--color-on-surface)] min-h-screen antialiased flex overflow-hidden">
       <DashboardSidebar
         groups={navGroups}
         userName={userName}
@@ -142,18 +144,20 @@ export function DashboardShell({
       {/* Main content */}
       <div
         className={cn(
-          "transition-all duration-300 flex flex-col min-h-screen",
-          collapsed ? "pl-[4.5rem]" : "pl-64",
+          "flex-1 flex flex-col overflow-hidden h-screen transition-all duration-300",
+          collapsed ? "ml-[4.5rem]" : "ml-64 lg:ml-[280px]"
         )}
       >
-        <div className="h-1.5 w-full bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 shrink-0" />
         <DashboardTopbar
           title={pageTitle}
           sidebarOpen={false}
           onToggleSidebar={() => setCollapsed(!collapsed)}
         />
-        <main className="p-4 sm:p-6">{children}</main>
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   );
 }
+

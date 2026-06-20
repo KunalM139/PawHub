@@ -155,6 +155,7 @@ listingSchema.index({
 });
 
 export type ListingDocument = InferSchemaType<typeof listingSchema> & {
+  _id: string;
   listingType: ListingType;
   petCategory: PetCategory;
 };

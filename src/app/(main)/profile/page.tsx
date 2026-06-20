@@ -54,10 +54,10 @@ export default async function ProfilePage() {
   };
 
   return (
-    <section className="py-14">
-      <Container>
+    <div className="font-outfit home-theme bg-[var(--color-surface)] text-[var(--color-on-surface)] selection:bg-[var(--color-primary)]/20 selection:text-[var(--color-primary)] min-h-screen">
+      <main className="max-w-[1280px] mx-auto px-[24px] py-[120px] flex flex-col gap-12">
         <ProfileWorkspace initialProfile={initialProfile} />
-      </Container>
-    </section>
+      </main>
+    </div>
   );
 }

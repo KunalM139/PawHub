@@ -6,7 +6,8 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   navLinks: [
     { href: "/", label: "Home" },
-    { href: "/browse", label: "Browse" },
+    { href: "/browse", label: "Browse Pets" },
+    { href: "/dashboard/shop", label: "Pet Products" },
     { href: "/post-listing", label: "Post Listing" },
     { href: "/seller-verification", label: "Verify Seller" },
   ],

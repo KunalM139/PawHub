@@ -6,10 +6,11 @@ import { cn } from "@/lib/utils";
 
 type FavoriteButtonProps = {
   listingId: string;
+  initialFavorited?: boolean;
 };
 
-export function FavoriteButton({ listingId }: FavoriteButtonProps) {
-  const [favorited, setFavorited] = useState(false);
+export function FavoriteButton({ listingId, initialFavorited = false }: FavoriteButtonProps) {
+  const [favorited, setFavorited] = useState(initialFavorited);
   const [loading, setLoading] = useState(false);
 
   const toggleFavorite = async (e: React.MouseEvent) => {

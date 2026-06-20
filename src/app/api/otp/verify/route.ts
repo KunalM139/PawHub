@@ -6,13 +6,20 @@ import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/server/db/connect";
 import { ListingModel } from "@/server/models/listing";
 import { UserModel } from "@/server/models/user";
+import { otpRateLimit } from "@/lib/ratelimit";
 
 const verifyOtpSchema = z.object({
-  otp: z.string().trim().length(6, "Enter the 6-digit OTP."),
+  otp: z.string().trim().length(6, "OTP must be exactly 6 digits."),
 });
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await otpRateLimit.limit(`otp_verify_${ip}`);
+    if (!success) {
+      return NextResponse.json({ message: "Too many OTP attempts. Try again later." }, { status: 429 });
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {

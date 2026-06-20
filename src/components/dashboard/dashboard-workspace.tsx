@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, useEffect, useRef, type FormEvent } from "react";
+import { useSocket } from "@/components/providers/socket-provider";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 type ListingItem = {
   _id: string;
@@ -97,6 +99,36 @@ export function DashboardWorkspace({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const { socket, onlineUsers } = useSocket();
+  const currentUserId = initialProfile.email ? initialProfile.email.split("@")[0] : "seller"; // Simple fallback, usually session.user.id is passed but we don't have it as prop.
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("receive-message", (data: any) => {
+      // If the message is for this receiver
+      setMessages((prev) => [data, ...prev]);
+      
+      // If we are actively chatting with them, emit read
+      if (activeTab === "messages") {
+        socket.emit("read-messages", { senderId: data.senderId, receiverId: currentUserId, listingId: data.listingId });
+      }
+    });
+
+    socket.on("typing", (data: any) => {
+      setIsTyping(true);
+      setTimeout(() => setIsTyping(false), 2000);
+    });
+
+    return () => {
+      socket.off("receive-message");
+      socket.off("typing");
+    };
+  }, [socket, activeTab, currentUserId]);
 
   const tabs: Array<{ id: DashboardTab; label: string }> = useMemo(
     () => [
@@ -177,17 +209,24 @@ export function DashboardWorkspace({
       data && data.message && typeof data.message === "object" ? data.message : null;
 
     if (createdMessage) {
-      setMessages((current) => [
-        {
-          _id: createdMessage._id,
-          body: createdMessage.body,
-          createdAt: createdMessage.createdAt,
-          senderId: { name: "You" },
-          receiverId: { name: "Seller" },
-          listingId: { _id: listingId, title: "Listing" },
-        },
-        ...current,
-      ]);
+      const newMsg = {
+        _id: createdMessage._id,
+        body: createdMessage.body,
+        createdAt: createdMessage.createdAt,
+        senderId: { name: "You" },
+        receiverId: { name: "Buyer" },
+        listingId: { _id: listingId, title: "Listing" },
+      };
+      
+      setMessages((current) => [newMsg, ...current]);
+      
+      if (socket) {
+        socket.emit("send-message", {
+          ...newMsg,
+          receiverId, // Pass the raw ID to socket routing
+          senderId: currentUserId
+        });
+      }
     }
 
     setIsBusy(false);
@@ -236,12 +275,7 @@ export function DashboardWorkspace({
     setIsBusy(false);
   }
 
-  async function deleteAccount() {
-    const confirmed = window.confirm("Delete your account permanently?");
-    if (!confirmed) {
-      return;
-    }
-
+  async function confirmDeleteAccount() {
     setError(null);
     setSuccess(null);
     setIsBusy(true);
@@ -255,10 +289,15 @@ export function DashboardWorkspace({
     if (!response.ok) {
       setError(data?.message ?? "Unable to delete account.");
       setIsBusy(false);
+      setShowDeleteConfirm(false);
       return;
     }
 
     await signOut({ callbackUrl: "/" });
+  }
+
+  function deleteAccount() {
+    setShowDeleteConfirm(true);
   }
 
   return (
@@ -373,7 +412,12 @@ export function DashboardWorkspace({
             />
             <textarea
               value={messageBody}
-              onChange={(event) => setMessageBody(event.target.value)}
+              onChange={(event) => {
+                setMessageBody(event.target.value);
+                if (socket && event.target.value.length > 0) {
+                  socket.emit("typing", { senderId: currentUserId, receiverId, listingId });
+                }
+              }}
               placeholder="Write your message"
               className="min-h-24 rounded-lg border border-black/10 bg-white px-3 py-2 text-sm outline-none"
               required
@@ -400,6 +444,16 @@ export function DashboardWorkspace({
                 </article>
               ))
             )}
+            {isTyping && (
+              <article className="rounded-2xl bg-[var(--color-surface-muted)] p-4 flex justify-start">
+                <div className="flex gap-1 items-center">
+                  <span className="size-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                  <span className="size-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                  <span className="size-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                </div>
+              </article>
+            )}
+            <div ref={messagesEndRef} />
           </div>
         </section>
       ) : null}
@@ -486,6 +540,16 @@ export function DashboardWorkspace({
           </div>
         </section>
       ) : null}
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete Account"
+        message="Are you sure you want to delete your account permanently? This action cannot be undone."
+        confirmText="Delete Account"
+        isDestructive={true}
+        onConfirm={confirmDeleteAccount}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

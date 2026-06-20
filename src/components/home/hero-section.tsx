@@ -1,70 +1,86 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
-import { Search, Heart } from "lucide-react";
-import { Container } from "@/components/ui/container";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Search, Heart, PawPrint, Dog, Cat, ShoppingBag, Shirt } from "lucide-react";
 
 export function HeroSection() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/browse?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push('/browse');
+    }
+  };
+
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-purple-100 via-pink-50 to-orange-50 pt-16 pb-20 lg:pt-24 lg:pb-32">
-      {/* Decorative background elements */}
-      <div className="absolute left-10 top-20 opacity-20">
-        <Heart className="size-12 text-pink-400 rotate-12" />
-      </div>
-      <div className="absolute right-20 bottom-20 opacity-20">
-        <Heart className="size-16 text-purple-400 -rotate-12" />
-      </div>
-
-      <Container className="relative z-10 grid gap-12 lg:grid-cols-2 lg:items-center">
-        <div className="max-w-2xl">
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl lg:leading-[1.1]">
-            Find the perfect companion for your family
-          </h1>
-          <p className="mt-6 text-lg leading-8 text-slate-600 sm:text-xl">
-            Experience the joy of pet parenthood. PawHub connects you with verified ethical breeders and loving owners looking to rehome their pets across India.
-          </p>
-          <div className="mt-10 flex flex-wrap gap-4">
-            <Link
-              href="/browse"
-              className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-8 text-base font-bold text-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl hover:brightness-110"
-            >
-              <Search className="size-5" />
-              Find Your Pet
-            </Link>
-            <Link
-              href="/post-listing"
-              className="inline-flex h-14 items-center justify-center rounded-full bg-white px-8 text-base font-bold text-slate-900 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
-            >
-              Rehome a Pet
-            </Link>
-          </div>
+    <section className="relative pt-20 pb-16 md:pt-32 md:pb-32 overflow-hidden hero-enter">
+      {/* Decorative Background Effects */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-[var(--color-secondary-fixed-dim)]/40 blur-[100px]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[var(--color-primary-fixed-dim)]/50 blur-[120px]"></div>
+        
+        {/* Floating Icons */}
+        <div className="absolute top-[20%] left-[10%] opacity-30 hidden md:block">
+          <Heart className="text-[var(--color-secondary)] size-16 animate-float-1" />
         </div>
+        <div className="absolute bottom-[30%] right-[15%] opacity-30 hidden md:block">
+          <PawPrint className="text-[var(--color-tertiary-fixed-dim)] size-14 animate-float-2" />
+        </div>
+        <div className="absolute top-[15%] right-[10%] opacity-30 rotate-12 hidden md:block">
+          <PawPrint className="text-[var(--color-primary)] size-12 animate-float-3" />
+        </div>
+      </div>
 
-        <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
-          {/* Image */}
-          <div className="relative aspect-[4/3] w-full lg:aspect-square drop-shadow-2xl">
-            <Image
-              src="/images/home/hero-pet.png"
-              alt="Happy pet owner"
-              fill
-              priority
-              className="object-contain"
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center">
+        <h1 className="text-4xl md:text-6xl text-[var(--color-on-surface)] mb-6 max-w-4xl mx-auto tracking-tight font-black">
+          Find Your <span className="text-gradient font-black">Perfect Companion</span>
+        </h1>
+        <p className="text-lg md:text-xl text-[var(--color-on-surface-variant)] max-w-2xl mx-auto mb-12">
+          Experience the joy of pet parenthood. PawHub connects you with verified ethical breeders and loving owners looking to rehome their pets across the country.
+        </p>
+
+        {/* Search Panel */}
+        <div className="glass-panel max-w-3xl mx-auto rounded-[2.5rem] p-3 md:p-4 shadow-2xl flex flex-col gap-5 relative z-10 transition-transform duration-500 hover:shadow-[var(--color-primary)]/20 hover:-translate-y-1">
+          <form onSubmit={handleSearch} className="flex items-center bg-white rounded-full p-2.5 border border-[var(--color-outline-variant)]/30 focus-within:border-[var(--color-primary)] focus-within:ring-4 ring-[var(--color-primary)]/20 transition-all">
+            <Search className="text-[var(--color-primary)] ml-4 size-6" />
+            <input 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent border-none focus:ring-0 text-lg text-[var(--color-on-surface)] placeholder:text-[var(--color-outline)]/70 px-4 outline-none" 
+              placeholder="Search for breeds, categories, or locations..." 
+              type="text"
             />
-          </div>
+            <button type="submit" className="btn-gradient text-white rounded-full px-8 py-3.5 text-sm font-bold whitespace-nowrap hidden sm:block hover-scale">Search Pets</button>
+            <button type="submit" className="btn-gradient text-white rounded-full px-4 py-3.5 text-sm font-bold whitespace-nowrap sm:hidden hover-scale"><Search className="size-5"/></button>
+          </form>
           
-          {/* Floating badge */}
-          <div className="absolute -left-6 bottom-12 rounded-2xl bg-white p-4 shadow-xl sm:bottom-24 sm:left-0 rotate-[-4deg]">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                <Heart className="size-5 fill-current" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-900">10k+ Pets</p>
-                <p className="text-xs font-medium text-slate-500">Found loving homes</p>
-              </div>
-            </div>
+          {/* Category Pills */}
+          <div className="flex flex-wrap justify-center gap-3 px-2 pb-2">
+            <Link href="/browse?category=dogs" className="bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 border border-[var(--color-primary)]/20 hover-scale">
+              <Dog className="size-5" /> Dogs
+            </Link>
+            <Link href="/browse?category=cats" className="bg-[var(--color-secondary)]/10 text-[var(--color-secondary)] hover:bg-[var(--color-secondary)] hover:text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 border border-[var(--color-secondary)]/20 hover-scale">
+              <Cat className="size-5" /> Cats
+            </Link>
+            <Link href="/dashboard/shop" className="bg-[var(--color-tertiary-fixed)] text-[var(--color-tertiary)] hover:bg-[var(--color-tertiary)] hover:text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all flex items-center gap-2 border border-[var(--color-tertiary)]/20 hover-scale">
+              <ShoppingBag className="size-5" /> Pet Products
+            </Link>
+            <Link href="/dashboard/shop" className="bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all sm:flex items-center gap-2 hidden border border-amber-500/20 hover-scale">
+              <Shirt className="size-5" /> Accessories
+            </Link>
+          </div>
+
+          <div className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-20 hidden lg:block pointer-events-none">
+            <PawPrint className="size-10 text-[var(--color-primary)] animate-float-4" />
           </div>
         </div>
-      </Container>
+      </div>
     </section>
   );
 }

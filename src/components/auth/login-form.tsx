@@ -48,20 +48,20 @@ export function LoginForm({ showGoogleLogin = false }: LoginFormProps) {
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
-      <label className="block text-sm font-semibold text-[var(--color-foreground)]">
+    <form className="space-y-5" onSubmit={handleSubmit}>
+      <label className="block text-[13px] font-bold text-[var(--color-on-surface)]">
         Email
         <input
           type="email"
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="mt-2 h-12 w-full rounded-xl border border-black/10 bg-white px-3 text-sm text-[var(--color-foreground)] outline-none transition focus:border-[var(--color-ring)]"
+          className="mt-2 h-12 w-full rounded-xl border border-[var(--color-outline-variant)]/50 bg-[var(--color-surface-container-lowest)] px-4 text-[15px] text-[var(--color-on-surface)] outline-none transition-all focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
           placeholder="you@example.com"
         />
       </label>
 
-      <label className="block text-sm font-semibold text-[var(--color-foreground)]">
+      <label className="block text-[13px] font-bold text-[var(--color-on-surface)]">
         Password
         <input
           type="password"
@@ -69,17 +69,17 @@ export function LoginForm({ showGoogleLogin = false }: LoginFormProps) {
           minLength={8}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="mt-2 h-12 w-full rounded-xl border border-black/10 bg-white px-3 text-sm text-[var(--color-foreground)] outline-none transition focus:border-[var(--color-ring)]"
+          className="mt-2 h-12 w-full rounded-xl border border-[var(--color-outline-variant)]/50 bg-[var(--color-surface-container-lowest)] px-4 text-[15px] text-[var(--color-on-surface)] outline-none transition-all focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
           placeholder="At least 8 characters"
         />
       </label>
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-[13px] font-semibold text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100">{error}</p> : null}
 
       <button
         type="submit"
         disabled={isLoading}
-        className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-primary-foreground)] transition hover:brightness-110 disabled:opacity-60"
+        className="mt-2 w-full h-12 rounded-xl btn-gradient text-[15px] font-bold tracking-wide text-white shadow-md hover-scale transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
       >
         {isLoading ? "Signing in..." : "Sign In"}
       </button>
@@ -88,17 +88,18 @@ export function LoginForm({ showGoogleLogin = false }: LoginFormProps) {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-black/10 bg-white px-4 text-sm font-semibold text-[var(--color-foreground)] transition hover:bg-[var(--color-secondary)]"
+          className="w-full h-12 flex items-center justify-center gap-2 rounded-xl border border-[var(--color-outline-variant)]/50 bg-[var(--color-surface-container-lowest)] text-[15px] font-bold text-[var(--color-on-surface)] transition-colors hover:bg-[var(--color-surface-container)] mt-4"
         >
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
           Continue with Google
         </button>
       ) : null}
 
-      <div className="flex items-center justify-between text-sm text-[var(--color-foreground-muted)]">
-        <Link href="/forgot-password" className="hover:text-[var(--color-foreground)]">
+      <div className="flex items-center justify-between text-[13px] font-semibold text-[var(--color-on-surface-variant)] pt-2">
+        <Link href="/forgot-password" className="hover:text-[var(--color-primary)] transition-colors">
           Forgot password?
         </Link>
-        <Link href="/register" className="hover:text-[var(--color-foreground)]">
+        <Link href="/register" className="hover:text-[var(--color-primary)] transition-colors">
           Create account
         </Link>
       </div>

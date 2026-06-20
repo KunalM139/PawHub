@@ -51,10 +51,11 @@ export async function uploadToCloudinary({
   };
 
   if (resourceType === "image") {
+    options.format = "webp";
     options.transformation = [
       {
         quality: "auto:best",
-        fetch_format: "auto",
+        fetch_format: "webp",
       },
     ];
   }

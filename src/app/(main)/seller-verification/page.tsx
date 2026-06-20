@@ -45,20 +45,32 @@ export default async function SellerVerificationPage() {
   ]);
 
   return (
-    <section className="py-14">
-      <Container>
-        <div className="mb-6 rounded-3xl border border-black/5 bg-white p-6 shadow-[var(--shadow-soft)]">
-          <h1 className="text-3xl font-black tracking-tight">Seller Verification</h1>
-          <p className="mt-3 text-sm leading-7 text-[var(--color-foreground-muted)]">
-            Apply with identity and business documents to unlock verified seller trust badge.
-          </p>
+    <div className="font-outfit home-theme bg-[var(--color-surface)] text-[var(--color-on-surface)] selection:bg-[var(--color-primary)]/20 selection:text-[var(--color-primary)] min-h-screen">
+      <main className="max-w-[1280px] mx-auto px-6 py-[120px] flex flex-col gap-8">
+      {/* Header Banner */}
+      <div className="glass-panel rounded-[2rem] p-8 md:p-[32px] relative overflow-hidden card-shadow">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-[var(--color-primary-fixed-dim)] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+        <div className="absolute -left-20 -bottom-20 w-72 h-72 bg-[var(--color-secondary-fixed-dim)] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
+          <div className="max-w-2xl">
+            <h1 className="text-[36px] md:text-[56px] leading-[1.1] tracking-[-0.02em] font-bold text-[var(--color-on-surface)] mb-4">
+              <span className="text-gradient">Seller</span> Verification
+            </h1>
+            <p className="text-[18px] leading-[1.6] text-[var(--color-on-surface-variant)]">
+              Apply with identity and business documents to unlock the verified seller trust badge. Ensure a safer community by confirming your details.
+            </p>
+          </div>
+          <div className="hidden md:flex items-center justify-center w-24 h-24 bg-[var(--color-surface-container-lowest)] rounded-full shadow-lg">
+            <span className="material-symbols-outlined text-[var(--color-primary)] text-[48px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+          </div>
         </div>
+      </div>
 
-        <VerificationForm
-          initialRequest={request ? JSON.parse(JSON.stringify(request)) : null}
-          initialRole={(user?.role as "user" | "verifiedSeller" | "admin" | undefined) ?? "user"}
-        />
-      </Container>
-    </section>
+      <VerificationForm
+        initialRequest={request ? JSON.parse(JSON.stringify(request)) : null}
+        initialRole={(user?.role as "user" | "verifiedSeller" | "admin" | undefined) ?? "user"}
+      />
+    </main>
+    </div>
   );
 }

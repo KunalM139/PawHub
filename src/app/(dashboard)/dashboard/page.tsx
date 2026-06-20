@@ -20,6 +20,7 @@ import { FavoriteModel } from "@/server/models/favorite";
 import { ListingModel } from "@/server/models/listing";
 import { MessageModel } from "@/server/models/message";
 import { UserModel } from "@/server/models/user";
+import { OrderModel } from "@/server/models/order";
 
 export const metadata: Metadata = {
   title: "Dashboard | PawHub",
@@ -36,7 +37,7 @@ export default async function PetOwnerDashboardPage() {
 
   const userId = session.user.id;
 
-  const [favCount, listingCount, msgCount, profile, recentFavorites] =
+  const [favCount, listingCount, msgCount, profile, recentFavorites, recentOrders, recentMessages] =
     await Promise.all([
       FavoriteModel.countDocuments({ userId }),
       ListingModel.countDocuments({ sellerId: userId }),
@@ -49,26 +50,67 @@ export default async function PetOwnerDashboardPage() {
         .limit(5)
         .populate("listingId", "title breed")
         .lean(),
+      OrderModel.find({ buyerId: userId })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate("productId", "title")
+        .lean(),
+      MessageModel.find({ $or: [{ senderId: userId }, { receiverId: userId }] })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
     ]);
 
   const userName = (profile?.name as string) ?? "there";
 
-  const activityItems = recentFavorites.map((fav) => {
-    const listing =
-      fav.listingId && typeof fav.listingId === "object"
-        ? (fav.listingId as { _id: string; title: string; breed: string })
-        : null;
-    return {
-      id: String(fav._id),
+  let allActivity: any[] = [];
+
+  recentFavorites.forEach((fav: any) => {
+    const listing = fav.listingId && typeof fav.listingId === "object" ? fav.listingId : null;
+    allActivity.push({
+      id: `fav-${fav._id}`,
+      createdAt: new Date(fav.createdAt),
       title: listing ? `Saved "${listing.title}"` : "Saved a listing",
       description: listing?.breed ?? "Pet listing",
-      time: new Date(fav.createdAt as string).toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-      }),
       dotColor: "bg-rose-400",
-    };
+    });
   });
+
+  recentOrders.forEach((order: any) => {
+    const product = order.productId && typeof order.productId === "object" ? order.productId : null;
+    allActivity.push({
+      id: `order-${order._id}`,
+      createdAt: new Date(order.createdAt),
+      title: product ? `Ordered "${product.title}"` : "Placed an order",
+      description: `Status: ${String(order.status).replace("_", " ")}`,
+      dotColor: "bg-emerald-400",
+    });
+  });
+
+  recentMessages.forEach((msg: any) => {
+    const isSent = String(msg.senderId) === userId;
+    allActivity.push({
+      id: `msg-${msg._id}`,
+      createdAt: new Date(msg.createdAt),
+      title: isSent ? "Sent a message" : "Received a message",
+      description: msg.body && msg.body.length > 40 ? `${msg.body.substring(0, 40)}...` : (msg.body || "Message"),
+      dotColor: "bg-purple-400",
+    });
+  });
+
+  allActivity.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  const topActivity = allActivity.slice(0, 5);
+
+  const activityItems = topActivity.map((act) => ({
+    id: act.id,
+    title: act.title,
+    description: act.description,
+    time: act.createdAt.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+    }),
+    dotColor: act.dotColor,
+  }));
 
   const quickActions = [
     {

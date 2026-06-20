@@ -3,10 +3,10 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { ListingManagement } from "@/components/listings/listing-management";
-import { Container } from "@/components/ui/container";
 import { connectToDatabase } from "@/server/db/connect";
 import { ListingModel } from "@/server/models/listing";
 import { UserModel } from "@/server/models/user";
+import { ScrollAnimations } from "@/components/providers/scroll-animations";
 
 export const metadata: Metadata = {
   title: "Post Listing",
@@ -23,16 +23,18 @@ export default async function PostListingPage() {
 
   if (!session?.user?.id) {
     return (
-      <section className="py-14">
-        <Container>
-          <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-[var(--shadow-soft)]">
-            <h1 className="text-3xl font-black tracking-tight">Post and Manage Listings</h1>
-            <p className="mt-3 text-sm text-[var(--color-foreground-muted)]">
-              Please login to create and manage listings.
-            </p>
+      <div className="font-outfit home-theme bg-[var(--color-surface)] text-[var(--color-on-surface)] selection:bg-[var(--color-primary)]/20 selection:text-[var(--color-primary)] min-h-screen">
+        <ScrollAnimations />
+        <main className="max-w-[1280px] mx-auto px-6 py-12 space-y-8 lg:space-y-12">
+          <div className="reveal">
+            <section className="glass-panel rounded-[2rem] p-8 flex flex-col items-start gap-2 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-primary)]/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+              <h1 className="text-4xl md:text-5xl font-black text-[var(--color-on-surface)] tracking-tight">Post and Manage Listings</h1>
+              <p className="text-lg text-[var(--color-on-surface-variant)] max-w-2xl">Please login to create and manage listings.</p>
+            </section>
           </div>
-        </Container>
-      </section>
+        </main>
+      </div>
     );
   }
 
@@ -48,22 +50,25 @@ export default async function PostListingPage() {
   const userType = user?.userType ?? "petOwner";
 
   return (
-    <section className="py-14">
-      <Container>
-        <div className="mb-6 rounded-3xl border border-black/5 bg-white p-6 shadow-[var(--shadow-soft)]">
-          <h1 className="text-3xl font-black tracking-tight">Post and Manage Listings</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--color-foreground-muted)]">
-            Create dog and cat listings with media uploads, edit details anytime, and archive
-            listings directly from your workspace.
-          </p>
+    <div className="font-outfit home-theme bg-[var(--color-surface)] text-[var(--color-on-surface)] selection:bg-[var(--color-primary)]/20 selection:text-[var(--color-primary)] min-h-screen">
+      <ScrollAnimations />
+      <main className="max-w-[1280px] mx-auto px-6 py-12 space-y-8 lg:space-y-12">
+        {/* Header Banner */}
+        <div className="reveal">
+          <section className="glass-panel rounded-[2rem] p-8 md:p-10 flex flex-col items-start gap-2 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-primary)]/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+            <h1 className="text-4xl md:text-5xl font-black text-[var(--color-on-surface)] tracking-tight">Post and Manage Listings</h1>
+            <p className="text-lg text-[var(--color-on-surface-variant)] max-w-2xl">Create dog and cat listings with media uploads, edit details anytime, and archive listings directly from your workspace.</p>
+          </section>
         </div>
 
+        {/* Two-Column Dashboard */}
         <ListingManagement
           initialListings={initialListings}
           isPhoneVerified={isPhoneVerified}
           userType={userType}
         />
-      </Container>
-    </section>
+      </main>
+    </div>
   );
 }

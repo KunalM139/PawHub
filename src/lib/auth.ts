@@ -98,7 +98,7 @@ export const authOptions: NextAuthOptions = {
         },
         {
           upsert: true,
-          new: true,
+          returnDocument: "after",
           setDefaultsOnInsert: true,
         },
       );
@@ -138,3 +138,10 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
+
+import { getServerSession } from "next-auth";
+export async function getCurrentUser() {
+  const session = await getServerSession(authOptions);
+  return session?.user;
+}
+

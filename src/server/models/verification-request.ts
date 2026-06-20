@@ -66,6 +66,13 @@ const verificationRequestSchema = new Schema(
       default: "pending",
       index: true,
     },
+    adminNotes: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 1000,
+      default: null,
+    },
     reviewedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",

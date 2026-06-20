@@ -4,11 +4,13 @@ import { z } from "zod";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { UserModel } from "@/server/models/user";
 import { VerificationRequestModel } from "@/server/models/verification-request";
+import { NotificationModel } from "@/server/models/notification";
 
 const reviewVerificationSchema = z.object({
   requestId: z.string().min(1),
   action: z.enum(["approve", "reject"]),
   rejectionReason: z.string().trim().max(300).optional().nullable(),
+  adminNotes: z.string().trim().max(500).optional().nullable(),
 });
 
 export async function GET() {
@@ -64,15 +66,30 @@ export async function PATCH(request: Request) {
         reviewedBy: adminGuard.adminId,
         reviewedAt: new Date(),
         rejectionReason: null,
+        adminNotes: parsed.data.adminNotes ?? verificationRequest.adminNotes,
       });
 
       await Promise.all([
         verificationRequest.save(),
-        UserModel.findByIdAndUpdate(verificationRequest.userId, {
-          $set: {
-            role: "verifiedSeller",
-          },
-        }),
+        (async () => {
+          const updatedUser = await UserModel.findByIdAndUpdate(verificationRequest.userId, {
+            $set: {
+              role: "verifiedSeller",
+            },
+          });
+
+          if (!updatedUser) {
+            throw new Error("Failed to update user role");
+          }
+
+          await NotificationModel.create({
+            userId: verificationRequest.userId,
+            title: "Seller Verification Approved!",
+            message: "Congratulations! Your account has been verified. You can now start selling on PawHub.",
+            type: "verification",
+            link: "/seller-dashboard"
+          });
+        })(),
       ]);
     } else {
       verificationRequest.set({
@@ -80,6 +97,7 @@ export async function PATCH(request: Request) {
         reviewedBy: adminGuard.adminId,
         reviewedAt: new Date(),
         rejectionReason: parsed.data.rejectionReason ?? "Details could not be verified.",
+        adminNotes: parsed.data.adminNotes ?? verificationRequest.adminNotes,
       });
 
       await verificationRequest.save();

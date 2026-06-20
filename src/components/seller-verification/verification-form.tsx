@@ -129,135 +129,190 @@ export function VerificationForm({ initialRequest, initialRole }: VerificationFo
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-3xl border border-black/5 bg-white p-6 shadow-[var(--shadow-soft)]">
-        <h2 className="text-2xl font-black tracking-tight">Verification Status</h2>
+    <div className="flex flex-col gap-8">
+      {/* Verification Status Card */}
+      <div className="bg-[var(--color-surface-container-lowest)] rounded-[3rem] p-[32px] card-shadow hover-scale">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="material-symbols-outlined text-[var(--color-outline)]">info</span>
+          <h2 className="text-[24px] font-semibold leading-[1.3] text-[var(--color-on-surface)]">Verification Status</h2>
+        </div>
 
         {isVerified ? (
-          <div className="mt-4 rounded-2xl bg-[#e8fff0] p-4 text-sm font-semibold text-[#176a37]">
-            Your seller account is verified. Verified badge is active.
+          <div className="mt-4 rounded-[2rem] bg-emerald-50 p-4 border border-emerald-100 flex items-center gap-3">
+            <span className="material-symbols-outlined text-emerald-600">verified</span>
+            <p className="text-[16px] font-semibold text-emerald-800">
+              Your seller account is verified. Verified badge is active.
+            </p>
           </div>
         ) : request ? (
-          <div className="mt-4 rounded-2xl bg-[var(--color-surface-muted)] p-4 text-sm">
-            <p className="font-semibold uppercase tracking-wide">Status: {request.status}</p>
+          <div className="mt-4 rounded-[2rem] bg-[var(--color-surface-container-low)] p-4 border border-[var(--color-outline-variant)]">
+            <p className="font-semibold uppercase tracking-wide text-[16px] text-[var(--color-on-surface-variant)] flex items-center gap-2">
+              Status: <span className={`px-2 py-0.5 rounded-full text-[14px] ${request.status === 'pending' ? 'bg-amber-100 text-amber-800' : request.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}`}>{request.status}</span>
+            </p>
             {request.status === "rejected" && request.rejectionReason ? (
-              <p className="mt-2 text-[var(--color-foreground-muted)]">
+              <p className="mt-2 text-[16px] text-[var(--color-error)]">
                 Reason: {request.rejectionReason}
               </p>
             ) : null}
           </div>
         ) : (
-          <p className="mt-3 text-sm text-[var(--color-foreground-muted)]">
+          <p className="text-[16px] leading-[1.6] text-[var(--color-outline)] italic ml-9">
             No verification request submitted yet.
           </p>
         )}
-      </section>
+      </div>
 
+      {/* Application Form Card */}
       {!isVerified && request?.status === "pending" ? null : (
-        <section className="rounded-3xl border border-black/5 bg-white p-6 shadow-[var(--shadow-soft)]">
-          <h2 className="text-2xl font-black tracking-tight">Apply for Seller Verification</h2>
-          <p className="mt-2 text-sm text-[var(--color-foreground-muted)]">
-            Upload identity and business details to receive your verified seller badge.
-          </p>
+        <div className="bg-[var(--color-surface-container-lowest)] rounded-[3rem] p-[32px] card-shadow relative overflow-hidden">
+          {/* Decorative accent line */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)]"></div>
+          
+          <div className="mb-8">
+            <h2 className="text-[32px] leading-[1.2] font-semibold text-[var(--color-on-surface)] mb-2">Apply for Seller Verification</h2>
+            <p className="text-[16px] leading-[1.6] text-[var(--color-on-surface-variant)]">
+              Upload identity and business details to receive your verified seller badge. All information is securely stored.
+            </p>
+          </div>
 
-          <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm font-semibold">
-                Legal Name
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Row 1 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-[14px] leading-[1.2] tracking-[0.05em] font-semibold text-[var(--color-on-surface)] mb-2" htmlFor="legalName">Legal Name</label>
                 <input
+                  id="legalName"
+                  required
                   value={legalName}
                   onChange={(event) => setLegalName(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-black/10 bg-white px-3 text-sm outline-none"
-                  required
+                  className="w-full bg-[var(--color-surface)] rounded-[2rem] border border-[var(--color-outline-variant)] px-4 py-3 text-[16px] text-[var(--color-on-surface)] focus:ring-1 focus:ring-[var(--color-primary)] transition-colors outline-none"
+                  placeholder="John Doe"
                 />
-              </label>
-
-              <label className="block text-sm font-semibold">
-                Business Name (optional)
+              </div>
+              <div>
+                <label className="block text-[14px] leading-[1.2] tracking-[0.05em] font-semibold text-[var(--color-on-surface)] mb-2" htmlFor="businessName">
+                  Business Name <span className="text-[var(--color-outline)] font-normal">(optional)</span>
+                </label>
                 <input
+                  id="businessName"
                   value={businessName}
                   onChange={(event) => setBusinessName(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-black/10 bg-white px-3 text-sm outline-none"
+                  className="w-full bg-[var(--color-surface)] rounded-[2rem] border border-[var(--color-outline-variant)] px-4 py-3 text-[16px] text-[var(--color-on-surface)] focus:ring-1 focus:ring-[var(--color-primary)] transition-colors outline-none"
+                  placeholder="Paws & Co."
                 />
-              </label>
+              </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <label className="block text-sm font-semibold">
-                Phone
+            {/* Row 2 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-[14px] leading-[1.2] tracking-[0.05em] font-semibold text-[var(--color-on-surface)] mb-2" htmlFor="phone">Phone</label>
                 <input
+                  id="phone"
+                  required
+                  type="tel"
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-black/10 bg-white px-3 text-sm outline-none"
-                  required
+                  className="w-full bg-[var(--color-surface)] rounded-[2rem] border border-[var(--color-outline-variant)] px-4 py-3 text-[16px] text-[var(--color-on-surface)] focus:ring-1 focus:ring-[var(--color-primary)] transition-colors outline-none"
+                  placeholder="(555) 123-4567"
                 />
-              </label>
-
-              <label className="block text-sm font-semibold">
-                City
+              </div>
+              <div>
+                <label className="block text-[14px] leading-[1.2] tracking-[0.05em] font-semibold text-[var(--color-on-surface)] mb-2" htmlFor="city">City</label>
                 <input
+                  id="city"
+                  required
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-black/10 bg-white px-3 text-sm outline-none"
-                  required
+                  className="w-full bg-[var(--color-surface)] rounded-[2rem] border border-[var(--color-outline-variant)] px-4 py-3 text-[16px] text-[var(--color-on-surface)] focus:ring-1 focus:ring-[var(--color-primary)] transition-colors outline-none"
+                  placeholder="Seattle"
                 />
-              </label>
-
-              <label className="block text-sm font-semibold">
-                State
+              </div>
+              <div>
+                <label className="block text-[14px] leading-[1.2] tracking-[0.05em] font-semibold text-[var(--color-on-surface)] mb-2" htmlFor="state">State</label>
                 <input
+                  id="state"
+                  required
                   value={state}
                   onChange={(event) => setState(event.target.value)}
-                  className="mt-2 h-11 w-full rounded-xl border border-black/10 bg-white px-3 text-sm outline-none"
-                  required
+                  className="w-full bg-[var(--color-surface)] rounded-[2rem] border border-[var(--color-outline-variant)] px-4 py-3 text-[16px] text-[var(--color-on-surface)] focus:ring-1 focus:ring-[var(--color-primary)] transition-colors outline-none"
+                  placeholder="WA"
                 />
-              </label>
+              </div>
             </div>
 
-            <label className="block text-sm font-semibold">
-              About Business (optional)
+            {/* Row 3 */}
+            <div>
+              <label className="block text-[14px] leading-[1.2] tracking-[0.05em] font-semibold text-[var(--color-on-surface)] mb-2" htmlFor="about">
+                About Business <span className="text-[var(--color-outline)] font-normal">(optional)</span>
+              </label>
               <textarea
+                id="about"
                 value={aboutBusiness}
                 onChange={(event) => setAboutBusiness(event.target.value)}
-                className="mt-2 min-h-24 w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none"
-              />
-            </label>
+                className="w-full bg-[var(--color-surface)] rounded-[2rem] border border-[var(--color-outline-variant)] px-4 py-3 text-[16px] text-[var(--color-on-surface)] focus:ring-1 focus:ring-[var(--color-primary)] transition-colors outline-none resize-y min-h-[120px]"
+                placeholder="Tell us briefly about your breeding practices or pet services..."
+              ></textarea>
+            </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm font-semibold">
-                ID Proof (image or PDF)
+            {/* Row 4 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* ID Proof Dropzone */}
+              <div className={`file-dropzone border-2 border-dashed rounded-[1rem] p-6 flex flex-col items-center justify-center text-center cursor-pointer h-48 relative overflow-hidden group transition-all duration-300 ${idProofFile ? 'border-[var(--color-primary)] bg-[var(--color-primary-container)]/10' : 'border-[var(--color-outline-variant)] bg-[var(--color-surface)] hover:bg-[var(--color-primary)]/5 hover:border-[var(--color-primary)]'}`}>
                 <input
+                  id="idProof"
                   type="file"
                   accept="image/*,application/pdf"
                   onChange={onIdProofChange}
-                  className="mt-2 block w-full text-sm"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   required
                 />
-              </label>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${idProofFile ? 'bg-[var(--color-primary-container)]' : 'bg-[var(--color-surface-container-high)] group-hover:bg-[var(--color-primary-container)]'}`}>
+                  <span className={`material-symbols-outlined transition-colors ${idProofFile ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface-variant)] group-hover:text-[var(--color-primary)]'}`} style={{ fontVariationSettings: idProofFile ? "'FILL' 1" : "'FILL' 0" }}>
+                    {idProofFile ? 'check_circle' : 'badge'}
+                  </span>
+                </div>
+                <h3 className="text-[14px] leading-[1.2] tracking-[0.05em] font-semibold text-[var(--color-on-surface)] mb-1 line-clamp-1">{idProofFile ? idProofFile.name : "ID Proof (image or PDF)"}</h3>
+                <p className="text-[13px] text-[var(--color-outline)]">{idProofFile ? "File selected" : "Drag & drop or click to upload"}</p>
+              </div>
 
-              <label className="block text-sm font-semibold">
-                Business Proof (optional)
+              {/* Business Proof Dropzone */}
+              <div className={`file-dropzone border-2 border-dashed rounded-[1rem] p-6 flex flex-col items-center justify-center text-center cursor-pointer h-48 relative overflow-hidden group transition-all duration-300 ${businessProofFile ? 'border-[var(--color-primary)] bg-[var(--color-primary-container)]/10' : 'border-[var(--color-outline-variant)] bg-[var(--color-surface)] hover:bg-[var(--color-primary)]/5 hover:border-[var(--color-primary)]'}`}>
                 <input
+                  id="businessProof"
                   type="file"
                   accept="image/*,application/pdf"
                   onChange={onBusinessProofChange}
-                  className="mt-2 block w-full text-sm"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
-              </label>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${businessProofFile ? 'bg-[var(--color-primary-container)]' : 'bg-[var(--color-surface-container-high)] group-hover:bg-[var(--color-primary-container)]'}`}>
+                  <span className={`material-symbols-outlined transition-colors ${businessProofFile ? 'text-[var(--color-primary)]' : 'text-[var(--color-on-surface-variant)] group-hover:text-[var(--color-primary)]'}`} style={{ fontVariationSettings: businessProofFile ? "'FILL' 1" : "'FILL' 0" }}>
+                    {businessProofFile ? 'check_circle' : 'storefront'}
+                  </span>
+                </div>
+                <h3 className="text-[14px] leading-[1.2] tracking-[0.05em] font-semibold text-[var(--color-on-surface)] mb-1 line-clamp-1">
+                  {businessProofFile ? businessProofFile.name : <><span className="text-[var(--color-on-surface)]">Business Proof</span> <span className="text-[var(--color-outline)] font-normal tracking-normal">(optional)</span></>}
+                </h3>
+                <p className="text-[13px] text-[var(--color-outline)]">{businessProofFile ? "File selected" : "Drag & drop or click to upload"}</p>
+              </div>
             </div>
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-            {success ? <p className="text-sm text-emerald-700">{success}</p> : null}
+            {error ? <p className="text-[14px] font-semibold text-[var(--color-error)] mt-2">{error}</p> : null}
+            {success ? <p className="text-[14px] font-semibold text-emerald-700 mt-2">{success}</p> : null}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-[var(--color-primary)] px-5 text-sm font-semibold text-[var(--color-primary-foreground)] disabled:opacity-60"
-            >
-              {isSubmitting ? "Submitting..." : "Submit Verification"}
-            </button>
+            {/* CTA */}
+            <div className="pt-6 flex justify-end">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn-gradient text-[var(--color-on-primary)] text-[14px] leading-[1.2] tracking-[0.05em] font-semibold px-8 py-4 rounded-full flex items-center gap-2 transition-all duration-300 disabled:opacity-60 disabled:hover:transform-none group"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Verification"}
+                {!isSubmitting && <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>}
+              </button>
+            </div>
           </form>
-        </section>
+        </div>
       )}
     </div>
   );

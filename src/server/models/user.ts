@@ -53,6 +53,44 @@ const userSchema = new Schema(
       maxlength: 280,
       default: null,
     },
+    storeName: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 100,
+      default: null,
+    },
+    storeViews: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    storeDescription: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 500,
+      default: null,
+    },
+    upiId: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 50,
+      default: null,
+    },
+    upiQrCode: {
+      type: String,
+      required: false,
+      default: null,
+    },
+    storePolicies: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 1000,
+      default: null,
+    },
     userIntent: {
       type: String,
       enum: ["adopt", "rehome", "seller"],
@@ -80,6 +118,31 @@ const userSchema = new Schema(
       required: false,
       default: null,
     },
+    savedAddresses: [
+      {
+        tag: { type: String, enum: ["Home", "Work", "Other"], default: "Home" },
+        fullName: { type: String, required: true, trim: true, maxlength: 100 },
+        contactPhone: { type: String, required: true, trim: true, maxlength: 20 },
+        building: { type: String, required: true, trim: true, maxlength: 200 },
+        area: { type: String, required: true, trim: true, maxlength: 200 },
+        landmark: { type: String, required: false, trim: true, maxlength: 200, default: "" },
+        city: { type: String, required: true, trim: true, maxlength: 100 },
+        state: { type: String, required: true, trim: true, maxlength: 100 },
+        pincode: { type: String, required: true, trim: true, maxlength: 20 },
+      }
+    ],
+    recentlyViewedProducts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Product",
+      }
+    ],
+    followedStores: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      }
+    ],
     role: {
       type: String,
       enum: ["user", "verifiedSeller", "admin"],
@@ -100,4 +163,7 @@ const userSchema = new Schema(
 
 export type UserDocument = InferSchemaType<typeof userSchema>;
 
+if (process.env.NODE_ENV !== "production") {
+  delete models.User;
+}
 export const UserModel = models.User || model("User", userSchema);

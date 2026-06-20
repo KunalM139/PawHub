@@ -7,6 +7,7 @@ import { signOut, useSession } from "next-auth/react";
 import { Menu, PawPrint, ShieldCheck, UserCircle2, X } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
+import { usePathname } from "next/navigation";
 import { Container } from "@/components/ui/container";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ export function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const { status, data: session } = useSession();
   const profileRef = useRef<HTMLDivElement | null>(null);
+  const pathname = usePathname();
 
   const isAuthenticated = status === "authenticated";
   const user = session?.user;
@@ -60,184 +62,133 @@ export function Navbar() {
   });
 
   return (
-    <header className="sticky top-0 z-50 border-b border-black/5 bg-white/80 backdrop-blur-xl">
-      <Container className="flex h-[4.5rem] items-center justify-between">
+    <header className="sticky top-0 z-50 w-full pt-4 pb-2 bg-transparent transition-all duration-300 font-outfit home-theme" id="navbar-container">
+      {/* Desktop Navbar (Floating Pill) */}
+      <nav id="main-nav" className="hidden lg:flex justify-between items-center mx-auto max-w-7xl rounded-full px-6 py-3 bg-white/80 border border-white/40 sticky-nav backdrop-blur-xl shadow-sm">
+        
+        {/* LOGO */}
         <Link href="/" className="inline-flex items-center gap-2">
-          <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-primary-foreground)] shadow-[var(--shadow-soft)]">
-            <PawPrint className="size-5" />
-          </span>
-          <span className="text-lg font-extrabold tracking-tight text-[var(--color-foreground)]">
+          <PawPrint className="text-[var(--color-primary)] size-8 hover:rotate-12 transition-transform" />
+          <span className="text-2xl font-extrabold text-[var(--color-on-surface)] tracking-tight">
             PawHub
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          {filteredNavLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-[var(--color-foreground-muted)] transition-colors hover:text-[var(--color-foreground)]"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        {/* Desktop Tabs */}
+        <div className="flex items-center gap-2">
+          {filteredNavLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "px-4 py-2 text-sm font-bold rounded-full transition-all duration-200 hover-scale",
+                  isActive 
+                    ? "bg-[var(--color-surface-container-high)] text-[var(--color-on-surface)]" 
+                    : "text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)]"
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </div>
 
-        <div className="hidden items-center gap-3 md:flex">
+        {/* Desktop Profile / Auth Buttons */}
+        <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <div className="relative" ref={profileRef}>
               <button
                 type="button"
                 onClick={() => setProfileOpen((current) => !current)}
-                className="inline-flex size-11 items-center justify-center overflow-hidden rounded-full border border-black/10 bg-white shadow-[var(--shadow-soft)]"
-                aria-label="Open profile menu"
+                className="inline-flex size-11 items-center justify-center overflow-hidden rounded-full border border-black/10 bg-white shadow-sm hover-scale"
               >
                 {user?.image ? (
-                  <Image
-                    src={user.image}
-                    alt={user.name ?? "Profile"}
-                    width={44}
-                    height={44}
-                    unoptimized
-                    loader={({ src }) => src}
-                    className="size-11 object-cover"
-                  />
+                  <Image src={user.image} alt={user.name ?? "Profile"} width={44} height={44} unoptimized loader={({ src }) => src} className="size-11 object-cover" />
                 ) : userInitials ? (
-                  <span className="text-sm font-semibold">{userInitials}</span>
+                  <span className="text-sm font-bold text-[var(--color-on-surface)]">{userInitials}</span>
                 ) : (
-                  <UserCircle2 className="size-6 text-[var(--color-foreground-muted)]" />
+                  <UserCircle2 className="size-6 text-[var(--color-on-surface-variant)]" />
                 )}
               </button>
 
               {profileOpen ? (
-                <div className="absolute right-0 top-full mt-3 w-44 rounded-2xl border border-black/10 bg-white p-2 shadow-[var(--shadow-soft)]">
-                  <Link
-                    href="/profile"
-                    className="block rounded-xl px-3 py-2 text-sm font-semibold text-[var(--color-foreground)] hover:bg-[var(--color-secondary)]"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    My Profile
-                  </Link>
-                  <Link
-                    href={dashboardHref}
-                    className="block rounded-xl px-3 py-2 text-sm font-semibold text-[var(--color-foreground)] hover:bg-[var(--color-secondary)]"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      void signOut({ callbackUrl: "/" });
-                    }}
-                    className="block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-[var(--color-foreground)] hover:bg-[var(--color-secondary)]"
-                  >
-                    Logout
-                  </button>
+                <div className="absolute right-0 top-full mt-3 w-44 rounded-2xl border border-black/10 bg-white p-2 shadow-lg z-50">
+                  <Link href="/profile" className="block rounded-xl px-3 py-2 text-sm font-bold text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container)]" onClick={() => setProfileOpen(false)}>My Profile</Link>
+                  <Link href={dashboardHref} className="block rounded-xl px-3 py-2 text-sm font-bold text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container)]" onClick={() => setProfileOpen(false)}>Dashboard</Link>
+                  <button type="button" onClick={() => { setProfileOpen(false); void signOut({ callbackUrl: "/" }); }} className="block w-full rounded-xl px-3 py-2 text-left text-sm font-bold text-red-600 hover:bg-red-50">Logout</button>
                 </div>
               ) : null}
             </div>
           ) : (
             <>
-              <Link
-                href="/login"
-                className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-[var(--color-foreground)] transition hover:bg-[var(--color-secondary)]"
-              >
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="inline-flex items-center justify-center rounded-full bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-[var(--color-primary-foreground)] shadow-[var(--shadow-soft)] transition hover:brightness-110"
-              >
-                Get Started
-              </Link>
+              <Link href="/login" className="text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] px-4 py-2 text-sm font-bold transition-colors hover-scale">Sign In</Link>
+              <Link href="/register" className="btn-gradient text-white rounded-full px-6 py-2.5 text-sm font-bold hover-scale transition-all">Get Started</Link>
             </>
           )}
         </div>
+      </nav>
 
+      {/* Mobile Top Bar */}
+      <div id="mobile-nav" className="lg:hidden flex justify-between items-center px-6 py-4 bg-white/90 backdrop-blur-xl border-b border-[var(--color-outline-variant)]/20 shadow-sm sticky-nav mx-4 rounded-3xl mt-2">
+        <Link href="/" className="flex items-center gap-2">
+          <PawPrint className="text-[var(--color-primary)] size-6" />
+          <span className="text-xl font-extrabold text-[var(--color-on-surface)]">PawHub</span>
+        </Link>
         <button
           type="button"
-          className="inline-flex rounded-xl p-2 text-[var(--color-foreground)] md:hidden"
+          className="text-[var(--color-on-surface)] p-2 bg-[var(--color-surface-container)] rounded-full hover-scale"
           onClick={() => setMenuOpen((current) => !current)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
         >
-          {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          {menuOpen ? <X className="size-5 text-red-500" /> : <Menu className="size-5" />}
         </button>
-      </Container>
+      </div>
 
+      {/* Mobile Menu Dropdown */}
       <div
         className={cn(
-          "border-t border-black/5 bg-white transition-all duration-300 md:hidden",
-          menuOpen ? "max-h-[420px] opacity-100" : "max-h-0 overflow-hidden opacity-0",
+          "absolute left-4 right-4 top-20 border border-black/5 bg-white transition-all duration-300 lg:hidden overflow-y-auto shadow-2xl rounded-3xl z-50",
+          menuOpen ? "max-h-[80vh] opacity-100 p-4" : "max-h-0 overflow-hidden opacity-0 border-transparent"
         )}
       >
-        <Container className="space-y-2 py-4">
-          {filteredNavLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="block rounded-xl px-3 py-2 text-sm font-medium text-[var(--color-foreground)] hover:bg-[var(--color-secondary)]"
-              onClick={() => setMenuOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="space-y-1">
+          {filteredNavLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "block rounded-2xl px-4 py-3 text-base font-bold transition-colors",
+                  isActive
+                    ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                    : "text-slate-700 hover:bg-slate-50"
+                )}
+                onClick={() => setMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
 
-          <div className="mt-3 grid grid-cols-2 gap-2 pt-3">
+          <div className="mt-4 grid grid-cols-2 gap-2 pt-4 border-t border-slate-100">
             {isAuthenticated ? (
               <>
-                <Link
-                  href="/profile"
-                  onClick={() => setMenuOpen(false)}
-                  className="inline-flex items-center justify-center rounded-xl border border-black/10 px-3 py-2 text-sm font-semibold text-[var(--color-foreground)]"
-                >
-                  My Profile
-                </Link>
-                <Link
-                  href={dashboardHref}
-                  onClick={() => setMenuOpen(false)}
-                  className="inline-flex items-center justify-center rounded-xl border border-black/10 px-3 py-2 text-sm font-semibold text-[var(--color-foreground)]"
-                >
-                  Dashboard
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    void signOut({ callbackUrl: "/" });
-                  }}
-                  className="col-span-2 inline-flex items-center justify-center rounded-xl bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-[var(--color-primary-foreground)]"
-                >
-                  Logout
-                </button>
+                <Link href="/profile" onClick={() => setMenuOpen(false)} className="inline-flex items-center justify-center rounded-xl border border-black/10 px-3 py-3 text-sm font-bold text-[var(--color-foreground)] bg-slate-50">My Profile</Link>
+                <Link href={dashboardHref} onClick={() => setMenuOpen(false)} className="inline-flex items-center justify-center rounded-xl border border-black/10 px-3 py-3 text-sm font-bold text-[var(--color-foreground)] bg-slate-50">Dashboard</Link>
+                <button type="button" onClick={() => { setMenuOpen(false); void signOut({ callbackUrl: "/" }); }} className="col-span-2 inline-flex items-center justify-center rounded-xl bg-red-50 text-red-600 px-3 py-3 text-sm font-bold">Logout</button>
               </>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  onClick={() => setMenuOpen(false)}
-                  className="inline-flex items-center justify-center rounded-xl border border-black/10 px-3 py-2 text-sm font-semibold text-[var(--color-foreground)]"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={() => setMenuOpen(false)}
-                  className="inline-flex items-center justify-center rounded-xl bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-[var(--color-primary-foreground)]"
-                >
-                  Join Now
-                </Link>
+                <Link href="/login" onClick={() => setMenuOpen(false)} className="inline-flex items-center justify-center rounded-xl border border-black/10 px-3 py-3 text-sm font-bold text-[var(--color-foreground)] bg-slate-50">Sign In</Link>
+                <Link href="/register" onClick={() => setMenuOpen(false)} className="btn-gradient inline-flex items-center justify-center rounded-xl px-3 py-3 text-sm font-bold text-[var(--color-primary-foreground)]">Get Started</Link>
               </>
             )}
           </div>
-
-          <p className="inline-flex items-center gap-2 pt-1 text-xs text-[var(--color-foreground-subtle)]">
-            <ShieldCheck className="size-4" />
-            Trusted listings for dogs and cats across India
-          </p>
-        </Container>
+        </div>
       </div>
     </header>
   );

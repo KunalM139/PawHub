@@ -24,47 +24,26 @@ export default async function ProfilePage() {
   if (!profile) return null;
 
   return (
-    <div className="space-y-6">
-      {/* Profile Header */}
-      <div className="flex items-center gap-5 rounded-[2rem] border border-slate-100 bg-white p-8 shadow-sm">
-        {profile.image ? (
-          <img
-            src={profile.image as string}
-            alt={profile.name as string}
-            className="size-20 rounded-3xl object-cover ring-4 ring-slate-50"
-          />
-        ) : (
-          <div className="inline-flex size-20 items-center justify-center rounded-3xl bg-gradient-to-br from-purple-500 to-orange-400 text-2xl font-black text-white shadow-sm">
-            {(profile.name as string)
-              .split(" ")
-              .map((p) => p[0])
-              .slice(0, 2)
-              .join("")
-              .toUpperCase()}
-          </div>
-        )}
-        <div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900">
-            {profile.name as string}
-          </h2>
-          <p className="mt-1 text-sm font-medium text-slate-500">
-            {profile.bio ? (profile.bio as string) : "No bio set"}
-          </p>
-        </div>
-      </div>
+    <div className="font-outfit home-theme text-[var(--color-on-surface)] selection:bg-[var(--color-primary)]/20 selection:text-[var(--color-primary)]">
+      <main className="max-w-[1000px] mx-auto p-4 md:p-8 flex flex-col gap-8">
+        <header className="mb-2">
+          <h1 className="text-[32px] leading-[1.2] font-semibold text-[var(--color-on-surface)] mb-2">My Profile</h1>
+          <p className="text-[18px] leading-[1.6] text-[var(--color-on-surface-variant)]">Manage your personal information and account settings</p>
+        </header>
 
-      {/* Inline Profile Manager */}
-      <ProfileManager profile={{
-        name: profile.name as string,
-        email: profile.email as string,
-        phone: profile.phone as string | undefined,
-        city: profile.city as string | undefined,
-        state: profile.state as string | undefined,
-        bio: profile.bio as string | undefined,
-        role: profile.role as string,
-        userType: profile.userType as string,
-        isPhoneVerified: !!profile.isPhoneVerified,
-      }} />
+        <ProfileManager profile={{
+          name: profile.name as string,
+          email: profile.email as string,
+          image: (profile.image as string) || null,
+          phone: profile.phone as string | undefined,
+          city: profile.city as string | undefined,
+          state: profile.state as string | undefined,
+          bio: profile.bio as string | undefined,
+          role: profile.role as string,
+          userType: profile.userType as string,
+          isPhoneVerified: !!profile.isPhoneVerified,
+        }} />
+      </main>
     </div>
   );
 }

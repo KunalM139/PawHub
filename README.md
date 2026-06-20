@@ -1,101 +1,80 @@
 # PawHub
 
-PawHub is a premium pet marketplace focused on dogs and cats in India, with trust-first flows for buyers, adopters, and verified sellers.
+PawHub is a premium, full-stack Next.js 15 application designed to provide a comprehensive marketplace for pet adoption, rehoming, and pet-related e-commerce.
 
-## Stack
+## Features
 
-- Next.js App Router
-- React + TypeScript
-- Tailwind CSS v4
-- MongoDB + Mongoose
-- NextAuth (JWT sessions)
-- Cloudinary (media uploads)
+- **Pet Marketplace**: Adopt, rehome, or purchase pets. Advanced filtering and search functionality.
+- **E-Commerce Shop**: Browse and buy pet food, accessories, toys, and grooming products.
+- **Real-Time Chat**: Socket.io integrated messaging between buyers and sellers.
+- **Seller Dashboard**: Manage listings, products, orders, messages, and profile.
+- **Admin Dashboard**: Comprehensive moderation tools for users, listings, products, and verification requests.
+- **Secure Authentication**: NextAuth.js integration with JWT sessions and robust role-based access control (RBAC).
+- **Rate Limiting**: Upstash Redis rate limiting to protect endpoints against abuse.
+- **Payment Integration**: Razorpay setup (Test Mode) for secure checkouts.
+- **Notifications**: In-app notifications for order updates and new messages.
 
-## Local Setup
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Database**: MongoDB (Mongoose)
+- **Authentication**: NextAuth.js
+- **Styling**: Tailwind CSS & Vanilla CSS
+- **Real-Time**: Socket.io (Custom Next.js Server)
+- **Storage**: Cloudinary (Image & Video hosting)
+- **Caching & Rate Limiting**: Upstash Redis
+- **Payments**: Razorpay
+
+## Getting Started
+
+### Prerequisites
+
+Ensure you have Node.js (v20+) installed.
+
+### Environment Variables
+
+Create a `.env.local` file in the root directory and add the following:
+
+```env
+MONGODB_URI=your_mongodb_connection_string
+NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Upstash Redis
+UPSTASH_REDIS_REST_URL=your_upstash_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_token
+
+# Razorpay
+RAZORPAY_KEY_ID=your_razorpay_key
+RAZORPAY_KEY_SECRET=your_razorpay_secret
+NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key
+```
+
+### Installation
 
 1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start the development server (Note: use `npm run dev:socket` to run the custom socket server):
+   ```bash
+   npm run dev:socket
+   ```
+3. Open `http://localhost:3000` in your browser.
 
-```bash
-npm install
-```
+## Documentation
 
-2. Create local environment file:
+For a deeper dive into the system's inner workings, refer to the following documentation files:
 
-```bash
-copy .env.example .env.local
-```
+- [System Architecture](./SYSTEM_ARCHITECTURE.md)
+- [Database Design](./DATABASE_DESIGN.md)
+- [API Documentation](./API_DOCS.md)
 
-3. Update values in `.env.local`:
+## License
 
-- `NEXTAUTH_SECRET`
-- `MONGODB_URI`
-- `MONGODB_DB_NAME`
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
-- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (optional, for Google auth)
-
-4. Run development server:
-
-```bash
-npm run dev
-```
-
-5. Open:
-
-```txt
-http://localhost:3000
-```
-
-## Quality Checks
-
-```bash
-npm run lint
-npm run build
-```
-
-## Production Deployment (Vercel)
-
-1. Push the repository to GitHub.
-2. Import the repository in Vercel.
-3. Configure project environment variables from `.env.example`.
-4. Set `NEXT_PUBLIC_APP_URL` and `NEXTAUTH_URL` to production domain.
-5. Deploy.
-
-## MongoDB Atlas Connection
-
-1. Create an Atlas cluster.
-2. Create a database user with read/write permissions.
-3. Add your deployment IP or enable network access as required.
-4. Copy the Atlas connection string into `MONGODB_URI`.
-5. Set `MONGODB_DB_NAME` (default: `pawhub`).
-
-## Deployment Checklist
-
-| Item | Required | Location |
-| --- | --- | --- |
-| Set production domain in `NEXT_PUBLIC_APP_URL` | Yes | Vercel Environment Variables |
-| Set production domain in `NEXTAUTH_URL` | Yes | Vercel Environment Variables |
-| Set secure `NEXTAUTH_SECRET` | Yes | Vercel Environment Variables |
-| Configure `MONGODB_URI` from Atlas | Yes | Vercel Environment Variables |
-| Configure `MONGODB_DB_NAME` | Yes | Vercel Environment Variables |
-| Configure Cloudinary keys (`CLOUDINARY_*`) | Yes | Vercel Environment Variables |
-| Configure Google OAuth credentials (optional) | Optional | Vercel + Google Cloud Console |
-| Add production callback URL for Google auth | Optional | Google Cloud Console |
-| Verify `/robots.txt` responds correctly | Yes | Deployed app runtime check |
-| Verify `/sitemap.xml` responds correctly | Yes | Deployed app runtime check |
-| Run `npm run lint` before release | Yes | CI/local |
-| Run `npm run build` before release | Yes | CI/local |
-
-## Sprint 12 SEO + Performance
-
-- Route metadata implemented across key pages.
-- Dynamic sitemap available at `/sitemap.xml`.
-- Robots policy available at `/robots.txt`.
-- Image optimization enabled with Next.js `Image` and Cloudinary remote patterns.
-- `poweredByHeader` disabled in Next.js config.
-
-## Notes
-
-- If `MONGODB_URI` is not set during build, sitemap gracefully falls back to static URLs.
-- Admin APIs and protected seller workflows require authenticated sessions.
+MIT License

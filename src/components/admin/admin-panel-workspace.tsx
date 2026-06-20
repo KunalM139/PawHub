@@ -98,6 +98,8 @@ export function AdminPanelWorkspace({
   const [reports, setReports] = useState(initialReports);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedListings, setSelectedListings] = useState<Set<string>>(new Set());
+  const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
 
   async function updateUserRole(userId: string, role: AdminUser["role"]) {
     setError(null);
@@ -168,6 +170,18 @@ export function AdminPanelWorkspace({
     setMessage("Listing moderation updated.");
   }
 
+  async function bulkUpdateListings(status: "approved" | "rejected") {
+    if (selectedListings.size === 0) return;
+    
+    const rejectionReason = status === "rejected" ? window.prompt("Bulk rejection reason", "Does not meet guidelines") : undefined;
+    
+    for (const id of Array.from(selectedListings)) {
+      await updateListingStatus(id, status, rejectionReason || undefined);
+    }
+    
+    setSelectedListings(new Set());
+  }
+
   async function reviewRequest(requestId: string, action: "approve" | "reject") {
     setError(null);
     setMessage(null);
@@ -184,6 +198,7 @@ export function AdminPanelWorkspace({
         requestId,
         action,
         rejectionReason,
+        adminNotes: adminNotes[requestId] || null,
       }),
     });
 
@@ -337,11 +352,44 @@ export function AdminPanelWorkspace({
       </section>
 
       <section className="rounded-3xl border border-black/5 bg-white p-6 shadow-[var(--shadow-soft)]">
-        <h2 className="text-2xl font-black tracking-tight">Manage Listings</h2>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h2 className="text-2xl font-black tracking-tight">Manage Listings</h2>
+          {selectedListings.size > 0 && (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => void bulkUpdateListings("approved")}
+                className="rounded-lg bg-[#e8fff0] px-4 py-2 text-sm font-semibold text-[#176a37]"
+              >
+                Approve Selected ({selectedListings.size})
+              </button>
+              <button
+                type="button"
+                onClick={() => void bulkUpdateListings("rejected")}
+                className="rounded-lg bg-[#fff1f1] px-4 py-2 text-sm font-semibold text-[#9d2222]"
+              >
+                Reject Selected ({selectedListings.size})
+              </button>
+            </div>
+          )}
+        </div>
         <div className="mt-4 space-y-3">
           {listings.slice(0, 15).map((listing) => (
-            <article key={listing._id} className="rounded-2xl bg-[var(--color-surface-muted)] p-4">
-              <h3 className="text-base font-bold">{listing.title}</h3>
+            <article key={listing._id} className="rounded-2xl bg-[var(--color-surface-muted)] p-4 relative">
+              <div className="absolute top-4 right-4">
+                <input
+                  type="checkbox"
+                  checked={selectedListings.has(listing._id)}
+                  onChange={(e) => {
+                    const newSet = new Set(selectedListings);
+                    if (e.target.checked) newSet.add(listing._id);
+                    else newSet.delete(listing._id);
+                    setSelectedListings(newSet);
+                  }}
+                  className="size-5 rounded border-gray-300"
+                />
+              </div>
+              <h3 className="text-base font-bold pr-8">{listing.title}</h3>
               <p className="text-sm text-[var(--color-foreground-muted)]">
                 {listing.city} • {listing.listingType} • {listing.status}
               </p>
@@ -405,21 +453,30 @@ export function AdminPanelWorkspace({
               <p className="text-sm text-[var(--color-foreground-muted)]">
                 {getUserName(request.userId)} • {request.status}
               </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => void reviewRequest(request._id, "approve")}
-                  className="rounded-lg bg-[#e8fff0] px-3 py-1.5 text-xs font-semibold text-[#176a37]"
-                >
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void reviewRequest(request._id, "reject")}
-                  className="rounded-lg bg-[#fff1f1] px-3 py-1.5 text-xs font-semibold text-[#9d2222]"
-                >
-                  Reject
-                </button>
+              <div className="mt-2 flex flex-col gap-2">
+                <input
+                  type="text"
+                  placeholder="Admin notes (internal only)..."
+                  value={adminNotes[request._id] || ""}
+                  onChange={(e) => setAdminNotes({ ...adminNotes, [request._id]: e.target.value })}
+                  className="w-full text-sm p-2 rounded-lg border border-black/10"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void reviewRequest(request._id, "approve")}
+                    className="rounded-lg bg-[#e8fff0] px-3 py-1.5 text-xs font-semibold text-[#176a37]"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void reviewRequest(request._id, "reject")}
+                    className="rounded-lg bg-[#fff1f1] px-3 py-1.5 text-xs font-semibold text-[#9d2222]"
+                  >
+                    Reject
+                  </button>
+                </div>
               </div>
             </article>
           ))}

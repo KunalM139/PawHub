@@ -56,7 +56,7 @@ export async function PATCH(request: Request) {
         },
       },
       {
-        new: true,
+        returnDocument: "after",
       },
     )
       .select("name email role createdAt")

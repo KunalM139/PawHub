@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Maximize2, Minimize2, Send, X, MessageSquare, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSocket } from "@/components/providers/socket-provider";
 
 type Message = {
   _id: string;
@@ -29,6 +30,10 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const { socket, onlineUsers } = useSocket();
+  const [isTyping, setIsTyping] = useState(false);
+  const isOnline = onlineUsers.includes(receiverId);
+
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
@@ -43,6 +48,31 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("receive-message", (data: any) => {
+      // If the message is for this listing and from this receiver
+      if (data.listingId === listingId && data.senderId === receiverId) {
+        setMessages((prev) => [...prev, data]);
+        // Emit read receipt
+        socket.emit("read-messages", { senderId: receiverId, receiverId: currentUserId, listingId });
+      }
+    });
+
+    socket.on("typing", (data: any) => {
+      if (data.listingId === listingId && data.senderId === receiverId) {
+        setIsTyping(true);
+        setTimeout(() => setIsTyping(false), 2000);
+      }
+    });
+
+    return () => {
+      socket.off("receive-message");
+      socket.off("typing");
+    };
+  }, [socket, listingId, receiverId, currentUserId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -72,6 +102,12 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
       if (res.ok) {
         const data = await res.json();
         setMessages((prev) => [...prev, data.message]);
+        
+        // Emit through socket
+        if (socket) {
+          socket.emit("send-message", data.message);
+        }
+        
         setInputValue("");
       }
     } catch (err) {
@@ -184,6 +220,15 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
             );
           })
         )}
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-white rounded-2xl rounded-bl-sm border border-black/5 shadow-sm px-4 py-3 flex gap-1 items-center">
+              <span className="size-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+              <span className="size-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+              <span className="size-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -192,7 +237,12 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
         <form onSubmit={handleSend} className="flex items-end gap-2">
           <textarea
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              if (socket && e.target.value.length > 0) {
+                socket.emit("typing", { senderId: currentUserId, receiverId, listingId });
+              }
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();

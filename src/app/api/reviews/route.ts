@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/server/db/connect";
 import { ListingModel } from "@/server/models/listing";
 import { ReviewModel } from "@/server/models/review";
+import { apiRateLimit } from "@/lib/ratelimit";
 
 const reviewPayloadSchema = z.object({
   listingId: z.string().min(1),
@@ -24,14 +25,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: "Invalid listing id." }, { status: 400 });
     }
 
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const skip = (page - 1) * limit;
+
     await connectToDatabase();
+
+    const total = await ReviewModel.countDocuments({ listingId, isVisible: true });
+    const totalPages = Math.ceil(total / limit);
 
     const reviews = await ReviewModel.find({ listingId, isVisible: true })
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .populate("reviewerId", "name")
       .lean();
 
-    return NextResponse.json({ reviews }, { status: 200 });
+    return NextResponse.json({ 
+      reviews,
+      pagination: { total, page, limit, totalPages }
+    }, { status: 200 });
   } catch {
     return NextResponse.json({ message: "Unable to fetch reviews." }, { status: 500 });
   }
@@ -39,6 +52,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await apiRateLimit.limit(`review_${ip}`);
+    if (!success) {
+      return NextResponse.json({ message: "Too many reviews submitted. Try again later." }, { status: 429 });
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -101,7 +120,7 @@ export async function POST(request: Request) {
       },
       {
         upsert: true,
-        new: true,
+        returnDocument: "after",
         setDefaultsOnInsert: true,
       },
     );

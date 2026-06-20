@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 
 import { FeaturedPetsSection } from "@/components/home/featured-pets";
 import { HeroSection } from "@/components/home/hero-section";
-import { PopularBreedsSection } from "@/components/home/popular-breeds";
-import { ThingsToConsider } from "@/components/home/things-to-consider";
-import { PetBenefits } from "@/components/home/pet-benefits";
+import { TrustFeatures } from "@/components/home/trust-features";
+import { CtaBanner } from "@/components/home/cta-banner";
 import { FaqSection } from "@/components/home/faq-section";
-import { Container } from "@/components/ui/container";
+import { ScrollAnimations } from "@/components/providers/scroll-animations";
 
 export const metadata: Metadata = {
   title: "Find Dogs & Cats for Sale and Adoption in India",
@@ -16,39 +15,32 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <div className="pb-8">
+    <div className="font-outfit home-theme pb-8 bg-[var(--color-surface)] text-[var(--color-on-surface)] selection:bg-[var(--color-primary)]/20 selection:text-[var(--color-primary)] overflow-hidden">
+      <ScrollAnimations />
       <HeroSection />
 
-      <section className="pb-6">
-        <Container>
-          <div className="grid gap-6 rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm sm:grid-cols-3 sm:p-8">
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-orange-50/50 p-6 text-center border border-orange-100">
-              <p className="text-xs font-bold uppercase tracking-widest text-orange-600">
-                Active Listings
-              </p>
-              <p className="mt-2 text-3xl font-black text-slate-900">2,400+</p>
-            </div>
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-purple-50/50 p-6 text-center border border-purple-100">
-              <p className="text-xs font-bold uppercase tracking-widest text-purple-600">
-                Verified Sellers
-              </p>
-              <p className="mt-2 text-3xl font-black text-slate-900">730+</p>
-            </div>
-            <div className="flex flex-col items-center justify-center rounded-2xl bg-blue-50/50 p-6 text-center border border-blue-100">
-              <p className="text-xs font-bold uppercase tracking-widest text-blue-600">
-                Cities Covered
-              </p>
-              <p className="mt-2 text-3xl font-black text-slate-900">40+</p>
-            </div>
+      {/* Stats Section */}
+      <section className="max-w-7xl mx-auto px-6 lg:px-8 mb-16 md:mb-32 reveal" id="stats-section">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white card-shadow rounded-3xl p-8 flex flex-col items-center justify-center text-center border-2 border-[var(--color-surface-container-high)]">
+            <p className="text-[var(--color-secondary)] text-sm font-bold tracking-widest uppercase mb-3">Active Listings</p>
+            <h3 className="text-4xl md:text-6xl text-[var(--color-on-surface)] font-black"><span className="stat-counter" data-target="2400">0</span>+</h3>
           </div>
-        </Container>
+          <div className="bg-white card-shadow rounded-3xl p-8 flex flex-col items-center justify-center text-center border-2 border-[var(--color-surface-container-high)]">
+            <p className="text-[var(--color-primary)] text-sm font-bold tracking-widest uppercase mb-3">Verified Sellers</p>
+            <h3 className="text-4xl md:text-6xl text-[var(--color-on-surface)] font-black"><span className="stat-counter" data-target="730">0</span>+</h3>
+          </div>
+          <div className="bg-white card-shadow rounded-3xl p-8 flex flex-col items-center justify-center text-center border-2 border-[var(--color-surface-container-high)]">
+            <p className="text-[var(--color-tertiary-container)] text-sm font-bold tracking-widest uppercase mb-3">Cities Covered</p>
+            <h3 className="text-4xl md:text-6xl text-[var(--color-on-surface)] font-black"><span className="stat-counter" data-target="40">0</span>+</h3>
+          </div>
+        </div>
       </section>
 
       <FeaturedPetsSection />
-      <PopularBreedsSection />
-      <ThingsToConsider />
-      <PetBenefits />
+      <TrustFeatures />
       <FaqSection />
+      <CtaBanner />
     </div>
   );
 }

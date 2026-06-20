@@ -7,6 +7,8 @@ import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/server/db/connect";
 import { ListingModel } from "@/server/models/listing";
 import { InterestRequestModel } from "@/server/models/interest-request";
+import { NotificationModel } from "@/server/models/notification";
+import { apiRateLimit } from "@/lib/ratelimit";
 
 const createRequestSchema = z.object({
   listingId: z.string().min(1),
@@ -49,6 +51,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await apiRateLimit.limit(`request_${ip}`);
+    if (!success) {
+      return NextResponse.json({ message: "Too many requests. Try again later." }, { status: 429 });
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });

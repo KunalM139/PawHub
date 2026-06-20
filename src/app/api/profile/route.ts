@@ -153,7 +153,7 @@ export async function PATCH(request: Request) {
         $set: updatePayload,
       },
       {
-        new: true,
+        returnDocument: "after",
       },
     )
       .select("name email image role phone city state bio isPhoneVerified userIntent")
