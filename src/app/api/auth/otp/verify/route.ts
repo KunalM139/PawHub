@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { connectToDatabase } from "@/server/db/connect";
 import { OtpRequestModel } from "@/server/models/otp-request";
+import { otpVerifyRateLimit, getIp, checkRateLimitWithLog } from "@/lib/ratelimit";
 
 const verifyOtpSchema = z.object({
   phone: z.string().trim().min(8).max(20),
@@ -11,6 +12,10 @@ const verifyOtpSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const ip = getIp(request);
+    const rateLimitError = await checkRateLimitWithLog(otpVerifyRateLimit, `otp_verify_${ip}`, "OtpVerify");
+    if (rateLimitError) return rateLimitError;
+
     const json = await request.json();
     const parsed = verifyOtpSchema.safeParse(json);
 

@@ -5,16 +5,14 @@ import { OrderModel } from "@/server/models/order";
 import { ProductModel } from "@/server/models/product";
 import { NotificationModel } from "@/server/models/notification";
 import { getCurrentUser } from "@/lib/auth";
-import { apiRateLimit } from "@/lib/ratelimit";
+import { orderPlaceRateLimit, getIp, checkRateLimit } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
-    const { success } = await apiRateLimit.limit(`checkout_${ip}`);
-    if (!success) {
-      return NextResponse.json({ message: "Checkout rate limit exceeded. Try again later." }, { status: 429 });
-    }
+    const ip = getIp(request);
+    const rateLimitError = await checkRateLimit(orderPlaceRateLimit, `checkout_${ip}`);
+    if (rateLimitError) return rateLimitError;
 
     await connectToDatabase();
     const currentUser = await getCurrentUser();

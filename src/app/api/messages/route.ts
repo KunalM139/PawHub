@@ -8,7 +8,7 @@ import { connectToDatabase } from "@/server/db/connect";
 import { ListingModel } from "@/server/models/listing";
 import { MessageModel } from "@/server/models/message";
 import { NotificationModel } from "@/server/models/notification";
-import { chatRateLimit } from "@/lib/ratelimit";
+import { messageRateLimit, checkRateLimitWithLog } from "@/lib/ratelimit";
 
 const sendMessageSchema = z.object({
   listingId: z.string().min(1),
@@ -63,16 +63,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
-    const { success } = await chatRateLimit.limit(`chat_${ip}`);
-    if (!success) {
-      return NextResponse.json({ message: "Too many messages sent. Please slow down." }, { status: 429 });
-    }
-
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
+
+    const rateLimitError = await checkRateLimitWithLog(messageRateLimit, session.user.id, "SendMessage", session.user.role === "admin");
+    if (rateLimitError) return rateLimitError;
 
     const json = await request.json();
     const parsed = sendMessageSchema.safeParse(json);
@@ -116,6 +113,11 @@ export async function POST(request: Request) {
       body: parsed.data.body,
       status: "sent",
     });
+
+    const io = (globalThis as any).io;
+    if (io) {
+      io.to(parsed.data.receiverId).emit("receive-message", newMessage);
+    }
 
     await NotificationModel.create({
       userId: parsed.data.receiverId,

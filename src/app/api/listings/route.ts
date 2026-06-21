@@ -4,16 +4,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { listingInputSchema } from "@/lib/validators/listing";
 import { connectToDatabase } from "@/server/db/connect";
-import {
-  buildPublicListingQuery,
-  buildPublicListingSort,
-  parseBrowseFilters,
-} from "@/server/listings/browse-query";
+import { buildPublicListingQuery, buildPublicListingSort, parseBrowseFilters } from "@/server/listings/browse-query";
 import { ListingModel } from "@/server/models/listing";
 import { UserModel } from "@/server/models/user";
+import { searchListingsRateLimit, listingCreateRateLimit, getIp, checkRateLimit } from "@/lib/ratelimit";
 
 export async function GET(request: Request) {
   try {
+    const ip = getIp(request);
+    const rateLimitError = await checkRateLimit(searchListingsRateLimit, `search_listings_${ip}`);
+    if (rateLimitError) return rateLimitError;
+
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
@@ -74,6 +75,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
+
+    const rateLimitError = await checkRateLimit(listingCreateRateLimit, session.user.id, session.user.role === "admin");
+    if (rateLimitError) return rateLimitError;
 
     const json = await request.json();
     const parsed = listingInputSchema.safeParse(json);

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { uploadImageRateLimit, checkRateLimitWithLog } from "@/lib/ratelimit";
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
+
+    const rateLimitError = await checkRateLimitWithLog(uploadImageRateLimit, session.user.id, "UploadPetMedia", session.user.role === "admin");
+    if (rateLimitError) return rateLimitError;
 
     const formData = await request.formData();
     const file = formData.get("file");

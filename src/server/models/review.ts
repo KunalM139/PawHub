@@ -54,6 +54,7 @@ const reviewSchema = new Schema(
 
 reviewSchema.index({ listingId: 1, reviewerId: 1 }, { unique: true });
 reviewSchema.index({ sellerId: 1, createdAt: -1 });
+reviewSchema.index({ sellerId: 1, isVisible: 1, createdAt: -1 });
 reviewSchema.index({ listingId: 1, createdAt: -1 });
 
 export type ReviewDocument = InferSchemaType<typeof reviewSchema>;

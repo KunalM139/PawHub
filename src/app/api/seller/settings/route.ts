@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/server/db/connect";
 import { UserModel } from "@/server/models/user";
 import { getCurrentUser } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 
 export async function PATCH(request: Request) {
   try {
@@ -14,6 +15,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
+    const body = await request.json();
     const { storeName, storeDescription, upiId, upiQrCode, storePolicies } = body;
 
     await connectToDatabase();
@@ -34,7 +36,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ user: updatedUser }, { status: 200 });
   } catch (error: any) {
-    console.error("Seller Settings PATCH Error:", error);
+    logger.error("Seller Settings PATCH Error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
 }

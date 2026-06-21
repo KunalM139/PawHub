@@ -11,7 +11,18 @@ const reportSchema = new Schema(
     listingId: {
       type: Schema.Types.ObjectId,
       ref: "Listing",
+      required: false, // Backward compatibility
+      index: true,
+    },
+    entityType: {
+      type: String,
+      enum: ["listing", "product", "user", "message", "review"],
+      default: "listing",
       required: true,
+    },
+    entityId: {
+      type: Schema.Types.ObjectId,
+      required: false,
       index: true,
     },
     reportedUserId: {
@@ -22,7 +33,19 @@ const reportSchema = new Schema(
     },
     reason: {
       type: String,
-      enum: ["spam", "fake_listing", "scam", "abuse", "animal_welfare", "other"],
+      enum: [
+        // Listings & Products
+        "spam", "fake_listing", "scam", "abuse", "animal_welfare", 
+        "wrong_information", "duplicate", "fake_product", "counterfeit",
+        // Users
+        "fraud", "fake_identity", "harassment",
+        // Messages
+        "threat", "inappropriate_content",
+        // Reviews
+        "fake_review", "abusive_language", "misleading_information",
+        // Catch-all
+        "other"
+      ],
       required: true,
       index: true,
     },
@@ -66,11 +89,19 @@ const reportSchema = new Schema(
 
 reportSchema.index({ status: 1, createdAt: -1 });
 reportSchema.index({ listingId: 1, status: 1, createdAt: -1 });
+reportSchema.index({ entityType: 1, entityId: 1, status: 1, createdAt: -1 });
 reportSchema.index(
   { reporterId: 1, listingId: 1, status: 1 },
   {
     unique: true,
-    partialFilterExpression: { status: "open" },
+    partialFilterExpression: { status: "open", listingId: { $exists: true, $ne: null } },
+  },
+);
+reportSchema.index(
+  { reporterId: 1, entityType: 1, entityId: 1, status: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: "open", entityId: { $exists: true, $ne: null } },
   },
 );
 

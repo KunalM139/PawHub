@@ -4,6 +4,7 @@ import { z } from "zod";
 import { generateOtpCode, getOtpExpiry, sendOtpMessage } from "@/lib/otp";
 import { connectToDatabase } from "@/server/db/connect";
 import { OtpRequestModel } from "@/server/models/otp-request";
+import { otpSendRateLimit, getIp, checkRateLimitWithLog } from "@/lib/ratelimit";
 
 const phoneRegex = /^[0-9+][0-9\s-]{7,19}$/;
 
@@ -13,6 +14,10 @@ const sendOtpSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const ip = getIp(request);
+    const rateLimitError = await checkRateLimitWithLog(otpSendRateLimit, `otp_send_${ip}`, "OtpSend");
+    if (rateLimitError) return rateLimitError;
+
     const json = await request.json();
     const parsed = sendOtpSchema.safeParse(json);
 

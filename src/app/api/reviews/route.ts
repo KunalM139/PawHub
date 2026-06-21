@@ -7,7 +7,8 @@ import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/server/db/connect";
 import { ListingModel } from "@/server/models/listing";
 import { ReviewModel } from "@/server/models/review";
-import { apiRateLimit } from "@/lib/ratelimit";
+import { UserModel } from "@/server/models/user";
+import { reviewRateLimit, checkRateLimit, apiRateLimit } from "@/lib/ratelimit";
 
 const reviewPayloadSchema = z.object({
   listingId: z.string().min(1),
@@ -63,6 +64,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
+
+    const rateLimitError = await checkRateLimit(reviewRateLimit, session.user.id, session.user.role === "admin");
+    if (rateLimitError) return rateLimitError;
 
     const json = await request.json();
     const parsed = reviewPayloadSchema.safeParse(json);

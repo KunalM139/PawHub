@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { hashPassword } from "@/lib/password";
-import { authRateLimit } from "@/lib/ratelimit";
+import { signupRateLimit, getIp, checkRateLimitWithLog } from "@/lib/ratelimit";
 import { connectToDatabase } from "@/server/db/connect";
 import { OtpRequestModel } from "@/server/models/otp-request";
 import { UserModel } from "@/server/models/user";
+import { logger } from "@/lib/logger";
 
 const phoneRegex = /^[0-9+][0-9\s-]{7,19}$/;
 
@@ -21,16 +22,18 @@ const registerSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
-    const { success } = await authRateLimit.limit(`register_${ip}`);
-    if (!success) {
-      return NextResponse.json({ message: "Too many requests. Try again later." }, { status: 429 });
+    const ip = getIp(request);
+    const rateLimitError = await checkRateLimitWithLog(signupRateLimit, `signup_${ip}`, "Signup");
+    if (rateLimitError) {
+      logger.security("Rate limit violation on signup", { ip });
+      return rateLimitError;
     }
 
     const json = await request.json();
     const parsed = registerSchema.safeParse(json);
 
     if (!parsed.success) {
+      logger.warn("Invalid signup payload", { issues: parsed.error.flatten(), ip });
       return NextResponse.json(
         {
           message: "Invalid input data.",
@@ -45,6 +48,7 @@ export async function POST(request: Request) {
     const existingUser = await UserModel.findOne({ email: parsed.data.email }).select("_id").lean();
 
     if (existingUser) {
+      logger.warn("Signup attempt with existing email", { email: parsed.data.email, ip });
       return NextResponse.json({ message: "Email already registered." }, { status: 409 });
     }
 
@@ -67,7 +71,7 @@ export async function POST(request: Request) {
 
     const userType = parsed.data.userIntent === "seller" ? "seller" : "petOwner";
 
-    await UserModel.create({
+    const user = await UserModel.create({
       name: parsed.data.name,
       email: parsed.data.email,
       password: hashedPassword,
@@ -82,13 +86,16 @@ export async function POST(request: Request) {
 
     // await OtpRequestModel.deleteOne({ phone: parsed.data.phone });
 
+    logger.info("Account created successfully", { userId: user._id, email: user.email, userType });
+
     return NextResponse.json(
       {
         message: "Account created successfully.",
       },
       { status: 201 },
     );
-  } catch {
+  } catch (error) {
+    logger.error("Signup failed", error);
     return NextResponse.json(
       {
         message: "Unable to create account. Please try again.",

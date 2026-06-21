@@ -54,8 +54,15 @@ export async function DELETE(request: Request) {
 
     await connectToDatabase();
     
+    const addressUser = await UserModel.findOne({ "savedAddresses._id": addressId });
+    if (!addressUser) return NextResponse.json({ message: "Address not found" }, { status: 404 });
+
+    if (addressUser._id.toString() !== currentUser.id && currentUser.role !== "admin") {
+      return NextResponse.json({ success: false, message: "You are not authorized to perform this action." }, { status: 403 });
+    }
+
     const user = await UserModel.findByIdAndUpdate(
-      currentUser.id,
+      addressUser._id,
       { $pull: { savedAddresses: { _id: addressId } } },
       { returnDocument: "after" }
     );
@@ -76,13 +83,18 @@ export async function PUT(request: Request) {
 
     await connectToDatabase();
     
+    const addressUser = await UserModel.findOne({ "savedAddresses._id": addressData._id });
+    if (!addressUser) return NextResponse.json({ message: "Address not found" }, { status: 404 });
+
+    if (addressUser._id.toString() !== currentUser.id && currentUser.role !== "admin") {
+      return NextResponse.json({ success: false, message: "You are not authorized to perform this action." }, { status: 403 });
+    }
+
     const user = await UserModel.findOneAndUpdate(
-      { _id: currentUser.id, "savedAddresses._id": addressData._id },
+      { _id: addressUser._id, "savedAddresses._id": addressData._id },
       { $set: { "savedAddresses.$": addressData } },
       { returnDocument: "after" }
     );
-
-    if (!user) return NextResponse.json({ message: "User or address not found" }, { status: 404 });
 
     return NextResponse.json({ addresses: user.savedAddresses });
   } catch (error) {

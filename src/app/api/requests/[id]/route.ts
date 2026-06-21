@@ -6,6 +6,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/server/db/connect";
 import { InterestRequestModel } from "@/server/models/interest-request";
+import { logger } from "@/lib/logger";
 
 const updateRequestSchema = z.object({
   status: z.enum(["approved", "rejected"]),
@@ -52,7 +53,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
 
     return NextResponse.json({ interestRequest }, { status: 200 });
   } catch (error) {
-    console.error("PATCH /api/requests/[id] error:", error);
+    logger.error("PATCH /api/requests/[id] error:", error);
     return NextResponse.json({ message: "Unable to update request." }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
 const { Server } = require("socket.io");
+const { getToken } = require("next-auth/jwt");
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
@@ -20,45 +21,52 @@ app.prepare().then(() => {
     }
   });
 
-  const onlineUsers = new Map();
+  // Expose IO globally so Next.js API routes can broadcast securely
+  global.io = io;
+
+  // NextAuth JWT Authentication Middleware
+  io.use(async (socket, next) => {
+    try {
+      const req = socket.request;
+      const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+      if (token && token.sub) {
+        socket.userId = token.sub;
+        return next();
+      }
+      return next(new Error("unauthorized"));
+    } catch (err) {
+      return next(new Error("unauthorized"));
+    }
+  });
+
+  const userSocketMap = new Map();
 
   io.on("connection", (socket) => {
-    // console.log("User connected:", socket.id);
+    const userId = socket.userId;
+    
+    // Auto-join the user's secure room
+    socket.join(userId);
 
-    socket.on("user-joined", (userId) => {
-      if (!userId) return;
-      onlineUsers.set(userId, socket.id);
-      io.emit("online-users", Array.from(onlineUsers.keys()));
-    });
+    if (!userSocketMap.has(userId)) {
+      userSocketMap.set(userId, new Set());
+    }
+    userSocketMap.get(userId).add(socket.id);
 
-    socket.on("send-message", (data) => {
-      // data: { receiverId, message, senderId, listingId }
-      const receiverSocketId = onlineUsers.get(data.receiverId);
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("receive-message", data);
-      }
-    });
+    io.emit("online-users", Array.from(userSocketMap.keys()));
 
     socket.on("typing", (data) => {
-      const receiverSocketId = onlineUsers.get(data.receiverId);
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("typing", data);
-      }
-    });
-
-    socket.on("read-messages", (data) => {
-      const senderSocketId = onlineUsers.get(data.senderId);
-      if (senderSocketId) {
-        io.to(senderSocketId).emit("read-messages", data);
-      }
+      // Prevent spoofing by enforcing sender identity
+      if (data.senderId !== userId) return;
+      io.to(data.receiverId).emit("typing", data);
     });
 
     socket.on("disconnect", () => {
-      for (const [userId, socketId] of onlineUsers.entries()) {
-        if (socketId === socket.id) {
-          onlineUsers.delete(userId);
-          io.emit("online-users", Array.from(onlineUsers.keys()));
-          break;
+      const sockets = userSocketMap.get(userId);
+      if (sockets) {
+        sockets.delete(socket.id);
+        if (sockets.size === 0) {
+          userSocketMap.delete(userId);
+          io.emit("online-users", Array.from(userSocketMap.keys()));
         }
       }
     });

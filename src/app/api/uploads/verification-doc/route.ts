@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { uploadDocRateLimit, checkRateLimitWithLog } from "@/lib/ratelimit";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export async function POST(request: Request) {
@@ -11,6 +12,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
+
+    const rateLimitError = await checkRateLimitWithLog(uploadDocRateLimit, session.user.id, "UploadVerificationDoc", session.user.role === "admin");
+    if (rateLimitError) return rateLimitError;
 
     const formData = await request.formData();
     const file = formData.get("file");

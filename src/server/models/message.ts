@@ -55,6 +55,8 @@ const messageSchema = new Schema(
 
 messageSchema.index({ listingId: 1, createdAt: -1 });
 messageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
+messageSchema.index({ senderId: 1, createdAt: -1 });
+messageSchema.index({ receiverId: 1, createdAt: -1 });
 messageSchema.index({ receiverId: 1, status: 1, createdAt: -1 });
 
 export type MessageDocument = InferSchemaType<typeof messageSchema>;

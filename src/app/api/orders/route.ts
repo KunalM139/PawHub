@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/server/db/connect";
 import { OrderModel } from "@/server/models/order";
 import { ProductModel } from "@/server/models/product";
+import { NotificationModel } from "@/server/models/notification";
 import { getCurrentUser } from "@/lib/auth";
+import { orderPlaceRateLimit, getIp, checkRateLimit } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: Request) {
   try {
@@ -44,13 +47,17 @@ export async function GET(request: Request) {
       pagination: { total, page, limit, totalPages }
     }, { status: 200 });
   } catch (error) {
-    console.error("Orders GET Error:", error);
+    logger.error("Orders GET Error:", error);
     return NextResponse.json({ message: "Internal server error." }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const ip = getIp(request);
+    const rateLimitError = await checkRateLimit(orderPlaceRateLimit, `orders_${ip}`);
+    if (rateLimitError) return rateLimitError;
+
     await connectToDatabase();
     const currentUser = await getCurrentUser();
 
@@ -100,7 +107,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ order: newOrder }, { status: 201 });
   } catch (error: any) {
-    console.error("Orders POST Error:", error);
+    logger.error("Orders POST Error:", error);
     return NextResponse.json(
       { message: error.message || "Failed to place order." },
       { status: 500 }

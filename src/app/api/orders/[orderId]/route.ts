@@ -4,6 +4,8 @@ import { OrderModel } from "@/server/models/order";
 import { NotificationModel } from "@/server/models/notification";
 import { getCurrentUser } from "@/lib/auth";
 import mongoose from "mongoose";
+import { orderCancelRateLimit, checkRateLimit } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 export async function PATCH(
   request: Request,
@@ -27,11 +29,14 @@ export async function PATCH(
     const isAdmin = currentUser.role === "admin";
 
     if (!isSeller && !isAdmin && !isBuyer) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ success: false, message: "You are not authorized to perform this action." }, { status: 403 });
     }
 
     // Buyer Cancellation Logic
     if (isBuyer && status === "cancelled") {
+      const rateLimitError = await checkRateLimit(orderCancelRateLimit, currentUser.id, isAdmin);
+      if (rateLimitError) return rateLimitError;
+
       if (order.status === "shipped" || order.status === "delivered" || order.status === "rejected") {
         return NextResponse.json({ message: "Cannot cancel an order at this stage." }, { status: 400 });
       }
@@ -153,7 +158,7 @@ export async function PATCH(
 
     return NextResponse.json({ message: "Invalid action" }, { status: 400 });
   } catch (error: any) {
-    console.error("Order PATCH Error:", error);
+    logger.error("Order PATCH Error:", error);
     return NextResponse.json({ message: error.message || "Failed to update order." }, { status: 500 });
   }
 }

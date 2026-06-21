@@ -95,6 +95,8 @@ const productSchema = new Schema(
 
 productSchema.index({ sellerId: 1, createdAt: -1 });
 productSchema.index({ isActive: 1, category: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, priceInr: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, stockQuantity: 1, createdAt: -1 });
 productSchema.index({
   title: "text",
   description: "text",

@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { listingInputSchema } from "@/lib/validators/listing";
 import { connectToDatabase } from "@/server/db/connect";
 import { ListingModel } from "@/server/models/listing";
+import { listingEditRateLimit, listingDeleteRateLimit, checkRateLimit } from "@/lib/ratelimit";
 
 type Params = {
   params: Promise<{ listingId: string }>;
@@ -58,14 +59,17 @@ export async function GET(_request: Request, { params }: Params) {
   }
 }
 
-export async function PATCH(request: Request, { params }: Params) {
+export async function PATCH(request: Request, props: { params: Promise<{ listingId: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
 
-    const { listingId } = await params;
+    const rateLimitError = await checkRateLimit(listingEditRateLimit, session.user.id, session.user.role === "admin");
+    if (rateLimitError) return rateLimitError;
+
+    const { listingId } = await props.params;
 
     if (!Types.ObjectId.isValid(listingId)) {
       return NextResponse.json({ message: "Invalid listing id." }, { status: 400 });
@@ -129,14 +133,17 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(request: Request, props: { params: Promise<{ listingId: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
 
-    const { listingId } = await params;
+    const rateLimitError = await checkRateLimit(listingDeleteRateLimit, session.user.id, session.user.role === "admin");
+    if (rateLimitError) return rateLimitError;
+
+    const { listingId } = await props.params;
 
     if (!Types.ObjectId.isValid(listingId)) {
       return NextResponse.json({ message: "Invalid listing id." }, { status: 400 });

@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/server/db/connect";
 import { CartModel } from "@/server/models/cart";
 import { ProductModel } from "@/server/models/product";
 import { getCurrentUser } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 
 // Fetch the user's cart
 export async function GET(request: Request) {
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ cart }, { status: 200 });
   } catch (error) {
-    console.error("Cart GET Error:", error);
+    logger.error("Cart GET Error:", error);
     return NextResponse.json({ message: "Internal server error." }, { status: 500 });
   }
 }
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ message: "Added to cart", cart }, { status: 200 });
   } catch (error: any) {
-    console.error("Cart POST Error:", error);
+    logger.error("Cart POST Error:", error);
     return NextResponse.json({ message: error.message || "Failed to update cart." }, { status: 500 });
   }
 }
@@ -133,7 +134,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ message: "Quantity updated", cart }, { status: 200 });
   } catch (error: any) {
-    console.error("Cart PATCH Error:", error);
+    logger.error("Cart PATCH Error:", error);
     return NextResponse.json({ message: "Internal server error." }, { status: 500 });
   }
 }
@@ -162,7 +163,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ message: "Item removed" }, { status: 200 });
   } catch (error) {
-    console.error("Cart DELETE Error:", error);
+    logger.error("Cart DELETE Error:", error);
     return NextResponse.json({ message: "Internal server error." }, { status: 500 });
   }
 }

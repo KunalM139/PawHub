@@ -37,8 +37,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     socketInstance.on("connect", () => {
       setIsConnected(true);
-      // Let the server know this user joined
-      socketInstance.emit("user-joined", session.user.id);
     });
 
     socketInstance.on("disconnect", () => {

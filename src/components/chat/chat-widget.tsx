@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Maximize2, Minimize2, Send, X, MessageSquare, Loader2 } from "lucide-react";
+import { Maximize2, Minimize2, Send, X, MessageSquare, Loader2, Check, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSocket } from "@/components/providers/socket-provider";
+import { logger } from "@/lib/logger";
 
 type Message = {
   _id: string;
@@ -11,6 +12,7 @@ type Message = {
   senderId: { _id: string; name: string } | string;
   receiverId: { _id: string; name: string } | string;
   createdAt: string;
+  status: "sent" | "delivered" | "read";
 };
 
 type ChatWidgetProps = {
@@ -43,7 +45,7 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
         setMessages((data.messages || []).reverse()); // API returns sorted by -1 (newest first), reverse for UI
       }
     } catch (err) {
-      console.error("Failed to fetch messages", err);
+      logger.error("Failed to fetch messages", err);
     } finally {
       setIsLoading(false);
     }
@@ -56,8 +58,26 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
       // If the message is for this listing and from this receiver
       if (data.listingId === listingId && data.senderId === receiverId) {
         setMessages((prev) => [...prev, data]);
-        // Emit read receipt
-        socket.emit("read-messages", { senderId: receiverId, receiverId: currentUserId, listingId });
+        // Only mark as read if chat is currently open
+        if (isOpen) {
+          fetch("/api/messages/read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ listingId, senderId: receiverId })
+          }).catch(console.error);
+        }
+      }
+    });
+
+    socket.on("messages-read", (data: any) => {
+      if (data.listingId === listingId && data.receiverId === receiverId) {
+        setMessages((prev) => 
+          prev.map((msg) => 
+            (typeof msg.senderId === "string" ? msg.senderId === currentUserId : msg.senderId._id === currentUserId)
+              ? { ...msg, status: "read" }
+              : msg
+          )
+        );
       }
     });
 
@@ -70,6 +90,7 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
 
     return () => {
       socket.off("receive-message");
+      socket.off("messages-read");
       socket.off("typing");
     };
   }, [socket, listingId, receiverId, currentUserId]);
@@ -77,6 +98,11 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
   useEffect(() => {
     if (isOpen) {
       void fetchMessages();
+      fetch("/api/messages/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId, senderId: receiverId })
+      }).catch(console.error);
     }
   }, [isOpen]);
 
@@ -103,15 +129,10 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
         const data = await res.json();
         setMessages((prev) => [...prev, data.message]);
         
-        // Emit through socket
-        if (socket) {
-          socket.emit("send-message", data.message);
-        }
-        
         setInputValue("");
       }
     } catch (err) {
-      console.error("Failed to send message", err);
+      logger.error("Failed to send message", err);
     } finally {
       setIsSending(false);
     }
@@ -155,7 +176,11 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
           </div>
           <div>
             <h3 className="text-sm font-bold leading-tight text-[var(--color-foreground)]">{receiverName}</h3>
-            <p className="text-[10px] font-semibold tracking-wide text-emerald-600 uppercase">Online</p>
+            {isOnline ? (
+              <p className="text-[10px] font-semibold tracking-wide text-emerald-600 uppercase">Online</p>
+            ) : (
+              <p className="text-[10px] font-semibold tracking-wide text-[var(--color-foreground-muted)] uppercase">Offline</p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1 text-[var(--color-foreground-muted)]">
@@ -209,12 +234,19 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
                   )}
                 >
                   <p className="whitespace-pre-wrap break-words">{msg.body}</p>
-                  <p className={cn("mt-1 text-[9px] font-medium tracking-wide uppercase", isSender ? "text-white/70" : "text-[var(--color-foreground-subtle)]")}>
+                  <div className={cn("mt-1 flex items-center justify-end gap-1 text-[9px] font-medium tracking-wide uppercase", isSender ? "text-white/70" : "text-[var(--color-foreground-subtle)]")}>
                     {new Date(msg.createdAt).toLocaleTimeString("en-IN", {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
-                  </p>
+                    {isSender && (
+                      msg.status === "read" ? (
+                        <CheckCheck className="size-3 text-blue-300" />
+                      ) : (
+                        <Check className="size-3" />
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
             );

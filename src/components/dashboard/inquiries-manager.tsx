@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 type Request = {
   _id: string;
@@ -41,7 +42,7 @@ export function InquiriesManager({ currentUserId }: { currentUserId: string }) {
       .then((data) => {
         setRequests(data.requests || []);
       })
-      .catch((err) => console.error(err))
+      .catch((err) => logger.error("Failed to fetch requests", err))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -58,7 +59,7 @@ export function InquiriesManager({ currentUserId }: { currentUserId: string }) {
         );
       }
     } catch (err) {
-      console.error(err);
+      logger.error("Failed to update status", err);
     }
   };
 

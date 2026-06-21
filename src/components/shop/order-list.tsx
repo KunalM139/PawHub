@@ -124,7 +124,7 @@ export function OrderList({ viewAs }: { viewAs: "buyer" | "seller" }) {
   }, [orders, filterStatus, filterYear, sortBy]);
 
   const canBuyerCancel = (order: OrderRecord) => {
-    if (order.status === "pending_approval" || order.status === "pending") return true;
+    if (order.status === "pending_approval") return true;
     if (order.status === "approved" && order.approvedAt) {
       const hours = (Date.now() - new Date(order.approvedAt).getTime()) / (1000 * 60 * 60);
       return hours <= 48;

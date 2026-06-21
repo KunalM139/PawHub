@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 type FavoriteButtonProps = {
   listingId: string;
@@ -32,7 +33,7 @@ export function FavoriteButton({ listingId, initialFavorited = false }: Favorite
         setFavorited(true);
       }
     } catch (err) {
-      console.error("Failed to favorite", err);
+      logger.error("Failed to favorite", err);
     } finally {
       setLoading(false);
     }

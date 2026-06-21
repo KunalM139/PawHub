@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2, MessageSquare } from "lucide-react";
 import { ChatWidget } from "@/components/chat/chat-widget";
+import { logger } from "@/lib/logger";
 
 type RequestActionProps = {
   listingId: string;
@@ -45,7 +46,7 @@ export function RequestAction({
         setShowModal(false);
       }
     } catch (err) {
-      console.error("Failed to send request", err);
+      logger.error("Failed to send request", err);
     } finally {
       setIsLoading(false);
     }

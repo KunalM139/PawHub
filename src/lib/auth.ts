@@ -8,6 +8,8 @@ import { isGoogleOAuthConfigured } from "@/lib/oauth";
 import { verifyPassword } from "@/lib/password";
 import { connectToDatabase } from "@/server/db/connect";
 import { UserModel } from "@/server/models/user";
+import { logger } from "@/lib/logger";
+import { authRateLimit } from "@/lib/ratelimit";
 
 const credentialsSchema = z.object({
   email: z.string().email().transform((value) => value.toLowerCase()),
@@ -21,7 +23,13 @@ const providers: NextAuthOptions["providers"] = [
       email: { label: "Email", type: "email" },
       password: { label: "Password", type: "password" },
     },
-    async authorize(credentials) {
+    async authorize(credentials, req) {
+      const ip = req?.headers?.["x-forwarded-for"]?.split(",")[0] || "127.0.0.1";
+      const { success } = await authRateLimit.limit(`login_${ip}`);
+      if (!success) {
+        throw new Error("Too many login attempts. Please try again later.");
+      }
+
       const parsed = credentialsSchema.safeParse(credentials);
 
       if (!parsed.success) {
@@ -29,16 +37,38 @@ const providers: NextAuthOptions["providers"] = [
       }
 
       await connectToDatabase();
-      const user = await UserModel.findOne({ email: parsed.data.email }).lean();
+      const user = await UserModel.findOne({ email: parsed.data.email.toLowerCase() })
+        .select("+password")
+        .lean();
 
-      if (!user?.password) {
+      if (!user) {
+        logger.warn("Login failed: User not found", { email: parsed.data.email });
         return null;
       }
 
       const passwordMatch = await verifyPassword(parsed.data.password, user.password);
       if (!passwordMatch) {
+        logger.warn("Login failed: Incorrect password", { email: parsed.data.email, userId: user._id });
         return null;
       }
+
+      // Trust & Safety Checks
+      if (user.accountStatus === "banned") {
+        logger.security("Banned user attempted login", { userId: user._id, email: user.email });
+        throw new Error("Your account has been permanently banned.");
+      }
+      if (user.accountStatus === "suspended" && user.suspendedUntil) {
+        if (new Date(user.suspendedUntil) > new Date()) {
+          logger.security("Suspended user attempted login", { userId: user._id, email: user.email });
+          throw new Error(`Your account is suspended until ${new Date(user.suspendedUntil).toLocaleDateString()}. Reason: ${user.suspensionReason || 'Violation of terms'}`);
+        } else {
+          // Auto-unsuspend if the time has passed
+          logger.info("User auto-unsuspended", { userId: user._id });
+          await UserModel.findByIdAndUpdate(user._id, { $set: { accountStatus: "active", suspendedUntil: null } });
+        }
+      }
+
+      logger.info("Login success", { userId: user._id, email: user.email, provider: "credentials" });
 
       return {
         id: String(user._id),
@@ -82,6 +112,25 @@ export const authOptions: NextAuthOptions = {
 
       await connectToDatabase();
 
+      // Trust & Safety checks for existing Google users
+      const existingUser = await UserModel.findOne({ email: user.email.toLowerCase() }).lean();
+      
+      if (existingUser) {
+        if (existingUser.accountStatus === "banned") {
+          logger.security("Banned user attempted Google login", { userId: existingUser._id, email: existingUser.email });
+          throw new Error("Your account has been permanently banned.");
+        }
+        if (existingUser.accountStatus === "suspended" && existingUser.suspendedUntil) {
+          if (new Date(existingUser.suspendedUntil) > new Date()) {
+            logger.security("Suspended user attempted Google login", { userId: existingUser._id, email: existingUser.email });
+            throw new Error(`Your account is suspended until ${new Date(existingUser.suspendedUntil).toLocaleDateString()}.`);
+          } else {
+            logger.info("User auto-unsuspended during Google login", { userId: existingUser._id });
+            await UserModel.findByIdAndUpdate(existingUser._id, { $set: { accountStatus: "active", suspendedUntil: null } });
+          }
+        }
+      }
+
       await UserModel.findOneAndUpdate(
         { email: user.email.toLowerCase() },
         {
@@ -89,11 +138,14 @@ export const authOptions: NextAuthOptions = {
             name: user.name ?? "PawHub User",
             image: user.image ?? null,
             emailVerifiedAt: new Date(),
-            role: "user",
+            role: existingUser ? existingUser.role : "user",
           },
           $setOnInsert: {
             userType: "petOwner",
             userIntent: "adopt",
+            accountStatus: "active",
+            strikeCount: 0,
+            warningCount: 0,
           },
         },
         {
@@ -102,6 +154,8 @@ export const authOptions: NextAuthOptions = {
           setDefaultsOnInsert: true,
         },
       );
+
+      logger.info("Login success", { email: user.email.toLowerCase(), provider: "google" });
 
       return true;
     },

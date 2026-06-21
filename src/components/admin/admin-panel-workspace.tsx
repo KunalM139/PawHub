@@ -15,6 +15,8 @@ type AdminUser = {
   name: string;
   email: string;
   role: "user" | "verifiedSeller" | "admin";
+  strikeCount: number;
+  accountStatus: "active" | "warned" | "suspended" | "banned";
 };
 
 type AdminListing = {
@@ -40,8 +42,10 @@ type ReportRecord = {
   reason: string;
   status: "open" | "in_review" | "resolved" | "dismissed";
   details?: string | null;
+  entityType: string;
+  entityId: string;
   reporterId?: { name?: string; email?: string } | string;
-  listingId?: { _id?: string; title?: string } | string;
+  reportedUserId?: { name?: string; email?: string; strikeCount: number; accountStatus: string } | string;
 };
 
 type Props = {
@@ -68,20 +72,9 @@ function getReporterName(value: ReportRecord["reporterId"]) {
   return value.name ?? "Reporter";
 }
 
-function getListingTitle(value: ReportRecord["listingId"]) {
-  if (!value || typeof value === "string") {
-    return "Listing";
-  }
-
-  return value.title ?? "Listing";
-}
-
-function getListingId(value: ReportRecord["listingId"]) {
-  if (!value || typeof value === "string") {
-    return null;
-  }
-
-  return value._id ?? null;
+function getReportedUserName(value: ReportRecord["reportedUserId"]) {
+  if (!value || typeof value === "string") return "Unknown";
+  return value.name ?? "Unknown";
 }
 
 export function AdminPanelWorkspace({
@@ -124,6 +117,26 @@ export function AdminPanelWorkspace({
       current.map((user) => (user._id === userId ? { ...user, role } : user)),
     );
     setMessage("User role updated.");
+  }
+
+  async function manualModeration(targetUserId: string, actionType: string, reason?: string) {
+    setError(null);
+    setMessage(null);
+    const response = await fetch("/api/admin/moderation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetUserId, actionType, reason: reason || "Admin manual action" }),
+    });
+
+    if (!response.ok) {
+      setError("Failed to execute moderation action.");
+      return;
+    }
+    const { user: updatedUser } = await response.json();
+    setUsers((current) => current.map((user) => 
+      user._id === targetUserId ? { ...user, strikeCount: updatedUser.strikeCount, accountStatus: updatedUser.accountStatus } : user
+    ));
+    setMessage(`Action ${actionType} successful.`);
   }
 
   async function updateListingStatus(
@@ -231,21 +244,23 @@ export function AdminPanelWorkspace({
   async function updateReportStatus(
     reportId: string,
     status: ReportRecord["status"],
-    removeListing?: boolean,
-    listingId?: string | null,
+    violationConfirmed?: boolean,
+    actionToTake?: "none" | "warn" | "remove_content" | "ban"
   ) {
     setError(null);
     setMessage(null);
 
+    const resolutionNote = violationConfirmed ? window.prompt("Resolution Note (Optional):", "") : undefined;
+
     const response = await fetch("/api/admin/reports", {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         reportId,
         status,
-        removeListing: removeListing ?? false,
+        violationConfirmed,
+        actionToTake,
+        resolutionNote: resolutionNote || undefined,
       }),
     });
 
@@ -257,28 +272,8 @@ export function AdminPanelWorkspace({
     }
 
     setReports((current) =>
-      current.map((report) =>
-        report._id === reportId
-          ? {
-              ...report,
-              status,
-            }
-          : report,
-      ),
+      current.map((report) => (report._id === reportId ? { ...report, status } : report)),
     );
-
-    if (removeListing && listingId) {
-      setListings((current) =>
-        current.map((listing) =>
-          listing._id === listingId
-            ? {
-                ...listing,
-                status: "archived",
-              }
-            : listing,
-        ),
-      );
-    }
 
     setOverview((current) => ({
       ...current,
@@ -288,7 +283,7 @@ export function AdminPanelWorkspace({
           : Math.max(0, current.openReports - 1),
     }));
 
-    setMessage("Report updated.");
+    setMessage("Report resolved successfully.");
   }
 
   return (
@@ -330,21 +325,38 @@ export function AdminPanelWorkspace({
                 <div>
                   <h3 className="text-base font-bold">{user.name}</h3>
                   <p className="text-sm text-[var(--color-foreground-muted)]">{user.email}</p>
+                  <div className="mt-1 flex gap-2 text-[10px] font-bold uppercase tracking-wider">
+                    <span className="text-orange-600">Strikes: {user.strikeCount || 0}</span>
+                    <span className={user.accountStatus === "active" ? "text-emerald-600" : "text-red-600"}>
+                      Status: {user.accountStatus}
+                    </span>
+                  </div>
                 </div>
-                <select
-                  value={user.role}
-                  onChange={(event) =>
-                    void updateUserRole(
-                      user._id,
-                      event.target.value as "user" | "verifiedSeller" | "admin",
-                    )
-                  }
-                  className="h-10 rounded-lg border border-black/10 bg-white px-3 text-sm"
-                >
-                  <option value="user">user</option>
-                  <option value="verifiedSeller">verifiedSeller</option>
-                  <option value="admin">admin</option>
-                </select>
+                <div className="flex flex-col gap-2">
+                  <select
+                    value={user.role}
+                    onChange={(event) =>
+                      void updateUserRole(
+                        user._id,
+                        event.target.value as "user" | "verifiedSeller" | "admin",
+                      )
+                    }
+                    className="h-8 rounded-lg border border-black/10 bg-white px-2 text-xs"
+                  >
+                    <option value="user">user</option>
+                    <option value="verifiedSeller">verifiedSeller</option>
+                    <option value="admin">admin</option>
+                  </select>
+                  <div className="flex gap-1">
+                    <button onClick={() => void manualModeration(user._id, "warn", window.prompt("Warning reason") || undefined)} className="rounded bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-800">Warn</button>
+                    <button onClick={() => void manualModeration(user._id, "add_strike", window.prompt("Strike reason") || undefined)} className="rounded bg-orange-100 px-2 py-1 text-xs font-bold text-orange-800">Strike</button>
+                    {user.accountStatus !== "banned" ? (
+                      <button onClick={() => void manualModeration(user._id, "ban", window.prompt("Ban reason") || undefined)} className="rounded bg-red-100 px-2 py-1 text-xs font-bold text-red-800">Ban</button>
+                    ) : (
+                      <button onClick={() => void manualModeration(user._id, "unban")} className="rounded bg-gray-200 px-2 py-1 text-xs font-bold">Unban</button>
+                    )}
+                  </div>
+                </div>
               </div>
             </article>
           ))}
@@ -484,55 +496,69 @@ export function AdminPanelWorkspace({
       </section>
 
       <section className="rounded-3xl border border-black/5 bg-white p-6 shadow-[var(--shadow-soft)]">
-        <h2 className="text-2xl font-black tracking-tight">Reports & Spam Control</h2>
+        <h2 className="text-2xl font-black tracking-tight">Trust & Safety Reports</h2>
         <div className="mt-4 space-y-3">
           {reports.slice(0, 15).map((report) => {
-            const listingId = getListingId(report.listingId);
+            const reportedTarget = getReportedUserName(report.reportedUserId);
+            const reporter = getReporterName(report.reporterId);
+            const targetInfo = typeof report.reportedUserId === "object" && report.reportedUserId ? report.reportedUserId : null;
 
             return (
               <article key={report._id} className="rounded-2xl bg-[var(--color-surface-muted)] p-4">
-                <h3 className="text-base font-bold">{report.reason}</h3>
-                <p className="text-sm text-[var(--color-foreground-muted)]">
-                  {getReporterName(report.reporterId)} • {getListingTitle(report.listingId)} •
-                  {" "}
-                  {report.status}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold uppercase text-red-600">{report.reason.replace("_", " ")}</h3>
+                  <span className="text-xs font-bold uppercase tracking-widest">{report.status}</span>
+                </div>
+                <p className="text-sm font-semibold text-[var(--color-foreground)] mt-1">
+                  Type: {report.entityType} | Target: {reportedTarget}
                 </p>
+                <p className="text-xs text-[var(--color-foreground-muted)] mt-1">
+                  Reporter: {reporter}
+                </p>
+                {targetInfo && (
+                  <div className="mt-1 text-[10px] font-bold uppercase tracking-wider flex gap-2">
+                    <span className="text-orange-600">Strikes: {targetInfo.strikeCount || 0}</span>
+                    <span className={targetInfo.accountStatus === "active" ? "text-emerald-600" : "text-red-600"}>
+                      Status: {targetInfo.accountStatus}
+                    </span>
+                  </div>
+                )}
                 {report.details ? (
-                  <p className="mt-1 text-sm text-[var(--color-foreground-muted)]">{report.details}</p>
+                  <p className="mt-2 text-sm text-[var(--color-foreground-muted)] p-2 bg-white rounded-lg border border-black/5">{report.details}</p>
                 ) : null}
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void updateReportStatus(report._id, "in_review")}
-                    className="rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold"
-                  >
-                    In Review
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void updateReportStatus(report._id, "resolved")}
-                    className="rounded-lg bg-[#e8fff0] px-3 py-1.5 text-xs font-semibold text-[#176a37]"
-                  >
-                    Resolve
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void updateReportStatus(report._id, "dismissed")}
-                    className="rounded-lg bg-[#fff1f1] px-3 py-1.5 text-xs font-semibold text-[#9d2222]"
-                  >
-                    Dismiss
-                  </button>
-                  {listingId ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void updateReportStatus(report._id, "resolved", true, listingId)
-                      }
-                      className="rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold"
-                    >
-                      Resolve + Remove Listing
-                    </button>
-                  ) : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {report.status !== "resolved" && report.status !== "dismissed" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void updateReportStatus(report._id, "resolved", true, "warn")}
+                        className="rounded-lg bg-yellow-100 px-3 py-1.5 text-xs font-semibold text-yellow-800"
+                      >
+                        Resolve & Warn
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void updateReportStatus(report._id, "resolved", true, "remove_content")}
+                        className="rounded-lg bg-orange-100 px-3 py-1.5 text-xs font-semibold text-orange-800"
+                      >
+                        Resolve & Remove Content (Strike)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void updateReportStatus(report._id, "resolved", true, "ban")}
+                        className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-800"
+                      >
+                        Resolve & Ban
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void updateReportStatus(report._id, "dismissed")}
+                        className="rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold"
+                      >
+                        Dismiss False Report
+                      </button>
+                    </>
+                  )}
                 </div>
               </article>
             );

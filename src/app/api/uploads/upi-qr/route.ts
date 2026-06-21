@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { uploadQrRateLimit, checkRateLimitWithLog } from "@/lib/ratelimit";
 import { uploadToCloudinary } from "@/lib/cloudinary";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +13,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
+
+    const rateLimitError = await checkRateLimitWithLog(uploadQrRateLimit, session.user.id, "UploadSellerQr", session.user.role === "admin");
+    if (rateLimitError) return rateLimitError;
 
     const formData = await request.formData();
     const file = formData.get("file");
@@ -54,7 +59,7 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error) {
-    console.error("UPI QR Upload Error:", error);
+    logger.error("UPI QR Upload Error:", error);
     return NextResponse.json(
       {
         message: "Unable to upload file.",

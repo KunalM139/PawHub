@@ -147,6 +147,9 @@ listingSchema.index({
   createdAt: -1,
 });
 listingSchema.index({ isActive: 1, createdAt: -1 });
+listingSchema.index({ isActive: 1, status: 1, petCategory: 1, listingType: 1, createdAt: -1 });
+listingSchema.index({ isActive: 1, status: 1, priceInr: 1, createdAt: -1 });
+listingSchema.index({ isActive: 1, status: 1, ageInMonths: 1, createdAt: -1 });
 listingSchema.index({
   title: "text",
   breed: "text",

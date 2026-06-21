@@ -55,7 +55,7 @@ export default async function AdminPage() {
     ]);
 
   const [users, listings, requests, reports] = await Promise.all([
-    UserModel.find().sort({ createdAt: -1 }).limit(100).select("name email role").lean(),
+    UserModel.find().sort({ createdAt: -1 }).limit(100).select("name email role strikeCount accountStatus").lean(),
     ListingModel.find().sort({ isPhoneVerified: -1, isVerifiedSeller: -1, createdAt: -1 }).limit(120).lean(),
     VerificationRequestModel.find()
       .sort({ createdAt: -1 })
@@ -66,7 +66,7 @@ export default async function AdminPage() {
       .sort({ createdAt: -1 })
       .limit(120)
       .populate("reporterId", "name email")
-      .populate("listingId", "title")
+      .populate("reportedUserId", "name email strikeCount accountStatus")
       .lean(),
   ]);
 

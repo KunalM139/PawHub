@@ -4,6 +4,7 @@ import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import { Star, X, Upload, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import { logger } from "@/lib/logger";
 
 export function ReviewModal({
   isOpen,
@@ -50,7 +51,7 @@ export function ReviewModal({
         }
       }
     } catch (e) {
-      console.error("Error fetching review", e);
+      logger.error("Error fetching review", e);
     }
     setIsLoading(false);
   }

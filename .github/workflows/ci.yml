@@ -1,32 +1,94 @@
-name: CI
+name: PawHub CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master", "develop" ]
 
 jobs:
-  build-and-test:
+  verify:
+    name: Code Quality & Build Verification
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: "20.x"
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run Linter
-      run: npm run lint
-      
-    - name: Type Check
-      run: npx tsc --noEmit
-      
-    - name: Build Project
-      run: npm run build
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: 🔍 Type Checking
+        run: npm run typecheck || npx tsc --noEmit
+
+      - name: 🧹 Linting
+        run: npm run lint
+
+      - name: 🏗️ Build Verification
+        run: npm run build
+
+      - name: 🛡️ Security Audit
+        # Runs audit, but `|| true` ensures the pipeline doesn't fail on low severity
+        run: npm audit --production || true
+
+      - name: 📊 Dependency Check
+        run: |
+          echo "Outdated packages:"
+          npm outdated || true
+          
+          echo "---"
+          echo "Duplicate dependencies:"
+          npm ls || true
+
+  # -------------------------------------------------------------
+  # FUTURE READY ARCHITECTURE
+  # The below jobs are stubbed out for future implementation
+  # -------------------------------------------------------------
+
+  # unit-tests:
+  #   name: Unit Tests
+  #   needs: verify
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Run Jest
+  #       run: npm test
+
+  # e2e-tests:
+  #   name: Playwright E2E Tests
+  #   needs: verify
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Run Playwright
+  #       run: npx playwright test
+
+  # lighthouse:
+  #   name: Lighthouse Performance Audit
+  #   needs: verify
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Run Lighthouse
+  #       run: npm run lighthouse
+
+  # deploy:
+  #   name: Deploy to Production
+  #   needs: [verify] # Add unit-tests and e2e-tests here later
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Deploy
+  #       run: echo "Deploying to Vercel/AWS..."

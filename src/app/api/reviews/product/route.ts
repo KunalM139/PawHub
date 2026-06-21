@@ -5,6 +5,7 @@ import { ProductModel } from "@/server/models/product";
 import { OrderModel } from "@/server/models/order";
 import { NotificationModel } from "@/server/models/notification";
 import { getCurrentUser } from "@/lib/auth";
+import { reviewRateLimit, checkRateLimit } from "@/lib/ratelimit";
 
 async function updateProductRating(productId: string) {
   const allReviews = await ProductReviewModel.find({ productId }).select("rating").lean();
@@ -39,6 +40,9 @@ export async function POST(request: Request) {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+    const rateLimitError = await checkRateLimit(reviewRateLimit, currentUser.id, currentUser.role === "admin");
+    if (rateLimitError) return rateLimitError;
 
     const { productId, rating, comment, images } = await request.json();
     if (!productId || !rating || !comment) return NextResponse.json({ message: "Missing fields" }, { status: 400 });
@@ -97,15 +101,18 @@ export async function PUT(request: Request) {
 
     await connectToDatabase();
 
-    const review = await ProductReviewModel.findOneAndUpdate(
-      { _id: reviewId, reviewerId: currentUser.id },
+    const existing = await ProductReviewModel.findById(reviewId);
+    if (!existing) return NextResponse.json({ message: "Review not found" }, { status: 404 });
+
+    if (existing.reviewerId.toString() !== currentUser.id && currentUser.role !== "admin") {
+      return NextResponse.json({ success: false, message: "You are not authorized to perform this action." }, { status: 403 });
+    }
+
+    const review = await ProductReviewModel.findByIdAndUpdate(
+      reviewId,
       { $set: { rating: Number(rating), comment, images: images || [] } },
       { returnDocument: "after" }
     );
-
-    if (!review) {
-      return NextResponse.json({ message: "Review not found or unauthorized" }, { status: 404 });
-    }
 
     await updateProductRating(review.productId.toString());
 
@@ -126,11 +133,14 @@ export async function DELETE(request: Request) {
 
     await connectToDatabase();
 
-    const review = await ProductReviewModel.findOneAndDelete({ _id: reviewId, reviewerId: currentUser.id });
-    
-    if (!review) {
-      return NextResponse.json({ message: "Review not found or unauthorized" }, { status: 404 });
+    const existing = await ProductReviewModel.findById(reviewId);
+    if (!existing) return NextResponse.json({ message: "Review not found" }, { status: 404 });
+
+    if (existing.reviewerId.toString() !== currentUser.id && currentUser.role !== "admin") {
+      return NextResponse.json({ success: false, message: "You are not authorized to perform this action." }, { status: 403 });
     }
+
+    const review = await ProductReviewModel.findByIdAndDelete(reviewId);
 
     await updateProductRating(review.productId.toString());
 

@@ -8,7 +8,8 @@ import { connectToDatabase } from "@/server/db/connect";
 import { ListingModel } from "@/server/models/listing";
 import { InterestRequestModel } from "@/server/models/interest-request";
 import { NotificationModel } from "@/server/models/notification";
-import { apiRateLimit } from "@/lib/ratelimit";
+import { requestInquiryRateLimit, getIp, checkRateLimit } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 const createRequestSchema = z.object({
   listingId: z.string().min(1),
@@ -44,18 +45,16 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ requests }, { status: 200 });
   } catch (error) {
-    console.error("GET /api/requests error:", error);
+    logger.error("GET /api/requests error:", error);
     return NextResponse.json({ message: "Unable to fetch requests." }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const ip = request.headers.get("x-forwarded-for") || "127.0.0.1";
-    const { success } = await apiRateLimit.limit(`request_${ip}`);
-    if (!success) {
-      return NextResponse.json({ message: "Too many requests. Try again later." }, { status: 429 });
-    }
+    const ip = getIp(request);
+    const rateLimitError = await checkRateLimit(requestInquiryRateLimit, `inquiry_${ip}`);
+    if (rateLimitError) return rateLimitError;
 
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -112,7 +111,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ interestRequest }, { status: 201 });
   } catch (error) {
-    console.error("POST /api/requests error:", error);
+    logger.error("POST /api/requests error:", error);
     return NextResponse.json({ message: "Unable to create request." }, { status: 500 });
   }
 }

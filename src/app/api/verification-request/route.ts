@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/server/db/connect";
 import { UserModel } from "@/server/models/user";
 import { VerificationRequestModel } from "@/server/models/verification-request";
+import { verificationSubmitRateLimit, checkRateLimit } from "@/lib/ratelimit";
 
 const verificationSchema = z.object({
   legalName: z.string().trim().min(2).max(120),
@@ -59,6 +60,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
+
+    const rateLimitError = await checkRateLimit(verificationSubmitRateLimit, session.user.id, session.user.role === "admin");
+    if (rateLimitError) return rateLimitError;
 
     const json = await request.json();
     const parsed = verificationSchema.safeParse(json);

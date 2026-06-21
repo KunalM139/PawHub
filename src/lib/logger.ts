@@ -1,10 +1,29 @@
-type LogLevel = "info" | "warn" | "error";
+type LogLevel = "info" | "warn" | "error" | "security";
 
 interface LogPayload {
   level: LogLevel;
   message: string;
   context?: Record<string, any>;
   error?: Error | unknown;
+}
+
+const SENSITIVE_KEYS = [
+  "password", "token", "otp", "secret", "apikey", "api_key",
+  "creditcard", "cvv", "payment", "accessToken", "refreshToken"
+];
+
+function sanitizeContext(context: Record<string, any>): Record<string, any> {
+  const sanitized = { ...context };
+  for (const key in sanitized) {
+    if (Object.prototype.hasOwnProperty.call(sanitized, key)) {
+      if (SENSITIVE_KEYS.some((sensitive) => key.toLowerCase().includes(sensitive))) {
+        sanitized[key] = "[REDACTED]";
+      } else if (typeof sanitized[key] === "object" && sanitized[key] !== null) {
+        sanitized[key] = sanitizeContext(sanitized[key]);
+      }
+    }
+  }
+  return sanitized;
 }
 
 export const logger = {
@@ -17,35 +36,49 @@ export const logger = {
   error: (message: string, error?: Error | unknown, context?: Record<string, any>) => {
     log({ level: "error", message, error, context });
   },
+  security: (message: string, context?: Record<string, any>) => {
+    log({ level: "security", message, context });
+  },
 };
 
 function log(payload: LogPayload) {
   const timestamp = new Date().toISOString();
+  const env = process.env.NODE_ENV || "development";
+  const context = payload.context ? sanitizeContext(payload.context) : undefined;
   
   const formattedLog = {
     timestamp,
     level: payload.level.toUpperCase(),
     message: payload.message,
-    ...(payload.context ? { context: payload.context } : {}),
+    ...(context ? { context } : {}),
     ...(payload.error ? { 
       error: payload.error instanceof Error 
-        ? { message: payload.error.message, stack: payload.error.stack }
+        ? { 
+            message: payload.error.message, 
+            name: payload.error.name,
+            stack: env === "development" ? payload.error.stack : undefined 
+          }
         : payload.error 
     } : {}),
   };
 
-  if (process.env.NODE_ENV === "production") {
-    // In production, we output structured JSON for log aggregators (e.g., Datadog, ELK)
-    console[payload.level](JSON.stringify(formattedLog));
-  } else {
-    // In development, we output readable logs
-    const prefix = `[${timestamp}] [${payload.level.toUpperCase()}]`;
-    if (payload.level === "error") {
-      console.error(prefix, payload.message, payload.error, payload.context || "");
-    } else if (payload.level === "warn") {
-      console.warn(prefix, payload.message, payload.context || "");
+  if (env === "production") {
+    // In production, output structured JSON for aggregators
+    // Use console.error for actual errors and security breaches, console.log for info/warn
+    if (payload.level === "error" || payload.level === "security") {
+      console.error(JSON.stringify(formattedLog));
     } else {
-      console.log(prefix, payload.message, payload.context || "");
+      console.log(JSON.stringify(formattedLog));
+    }
+  } else {
+    // In development, output readable logs
+    const prefix = `[${timestamp}] [${payload.level.toUpperCase()}]`;
+    if (payload.level === "error" || payload.level === "security") {
+      console.error(prefix, payload.message, payload.error || "", context || "");
+    } else if (payload.level === "warn") {
+      console.warn(prefix, payload.message, context || "");
+    } else {
+      console.log(prefix, payload.message, context || "");
     }
   }
 }

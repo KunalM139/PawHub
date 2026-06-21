@@ -2,9 +2,15 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/server/db/connect";
 import { ProductModel } from "@/server/models/product";
 import { getCurrentUser } from "@/lib/auth";
+import { searchProductsRateLimit, productCreateRateLimit, getIp, checkRateLimit } from "@/lib/ratelimit";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: Request) {
   try {
+    const ip = getIp(request);
+    const rateLimitError = await checkRateLimit(searchProductsRateLimit, `search_products_${ip}`);
+    if (rateLimitError) return rateLimitError;
+
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
@@ -56,19 +62,23 @@ export async function GET(request: Request) {
       pagination: { total, page, limit, totalPages } 
     }, { status: 200 });
   } catch (error) {
-    console.error("Products GET Error:", error);
+    logger.error("Products GET Error:", error);
     return NextResponse.json({ message: "Internal server error." }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    await connectToDatabase();
     const currentUser = await getCurrentUser();
 
     if (!currentUser) {
       return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
     }
+
+    const rateLimitError = await checkRateLimit(productCreateRateLimit, currentUser.id, currentUser.role === "admin");
+    if (rateLimitError) return rateLimitError;
+
+    await connectToDatabase();
 
     if (currentUser.role !== "verifiedSeller" && currentUser.role !== "admin") {
       return NextResponse.json({ message: "Only verified sellers can add products." }, { status: 403 });
@@ -89,7 +99,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ product: newProduct }, { status: 201 });
   } catch (error: any) {
-    console.error("Products POST Error:", error);
+    logger.error("Products POST Error:", error);
     return NextResponse.json(
       { message: error.message || "Failed to create product." },
       { status: 500 }

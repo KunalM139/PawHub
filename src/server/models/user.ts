@@ -149,6 +149,45 @@ const userSchema = new Schema(
       default: "user",
       required: true,
     },
+    // Trust & Safety Moderation Fields
+    strikeCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    warningCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    accountStatus: {
+      type: String,
+      enum: ["active", "warned", "suspended", "banned"],
+      default: "active",
+      required: true,
+    },
+    suspensionReason: {
+      type: String,
+      required: false,
+      maxlength: 500,
+      default: null,
+    },
+    suspendedUntil: {
+      type: Date,
+      required: false,
+      default: null,
+    },
+    bannedAt: {
+      type: Date,
+      required: false,
+      default: null,
+    },
+    bannedReason: {
+      type: String,
+      required: false,
+      maxlength: 500,
+      default: null,
+    },
     emailVerifiedAt: {
       type: Date,
       required: false,
@@ -160,6 +199,9 @@ const userSchema = new Schema(
     versionKey: false,
   },
 );
+
+userSchema.index({ role: 1, createdAt: -1 });
+userSchema.index({ userType: 1, createdAt: -1 });
 
 export type UserDocument = InferSchemaType<typeof userSchema>;
 
