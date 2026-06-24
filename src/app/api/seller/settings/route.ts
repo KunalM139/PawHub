@@ -11,7 +11,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    if (currentUser.role !== "verifiedSeller" && currentUser.role !== "admin") {
+    if (currentUser.userType !== "seller" && currentUser.role !== "admin") {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 

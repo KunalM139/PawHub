@@ -37,11 +37,11 @@ export default async function SellerVerificationPage() {
 
   await connectToDatabase();
 
-  const [request, user] = await Promise.all([
+    const [request, user] = await Promise.all([
     VerificationRequestModel.findOne({ userId: session.user.id })
       .sort({ createdAt: -1 })
       .lean(),
-    UserModel.findById(session.user.id).select("role").lean(),
+    UserModel.findById(session.user.id).select("role storeName").lean(),
   ]);
 
   return (
@@ -69,6 +69,7 @@ export default async function SellerVerificationPage() {
       <VerificationForm
         initialRequest={request ? JSON.parse(JSON.stringify(request)) : null}
         initialRole={(user?.role as "user" | "verifiedSeller" | "admin" | undefined) ?? "user"}
+        initialStoreName={user?.storeName || ""}
       />
     </main>
     </div>

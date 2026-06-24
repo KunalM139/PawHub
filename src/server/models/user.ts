@@ -193,6 +193,39 @@ const userSchema = new Schema(
       required: false,
       default: null,
     },
+    verificationStatus: {
+      type: String,
+      enum: ["not_submitted", "pending", "more_info_required", "approved", "rejected"],
+      default: "not_submitted",
+    },
+    verificationAdminNotes: {
+      type: String,
+      required: false,
+      maxlength: 1000,
+      default: null,
+    },
+    verificationRejectionReason: {
+      type: String,
+      required: false,
+      maxlength: 500,
+      default: null,
+    },
+    verifiedAt: {
+      type: Date,
+      required: false,
+      default: null,
+    },
+    verifiedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+      default: null,
+    },
+    verificationResubmissionCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,

@@ -8,7 +8,7 @@ import { NotificationModel } from "@/server/models/notification";
 
 const reviewVerificationSchema = z.object({
   requestId: z.string().min(1),
-  action: z.enum(["approve", "reject"]),
+  action: z.enum(["approve", "reject", "more_info_required"]),
   rejectionReason: z.string().trim().max(300).optional().nullable(),
   adminNotes: z.string().trim().max(500).optional().nullable(),
 });
@@ -23,7 +23,7 @@ export async function GET() {
     const requests = await VerificationRequestModel.find()
       .sort({ createdAt: -1 })
       .limit(100)
-      .populate("userId", "name email role")
+      .populate("userId", "name email role verificationStatus")
       .lean();
 
     return NextResponse.json({ requests }, { status: 200 });
@@ -60,51 +60,75 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ message: "Request not found." }, { status: 404 });
     }
 
+    const actionMap = {
+      approve: "approved",
+      reject: "rejected",
+      more_info_required: "more_info_required",
+    } as const;
+
+    const newStatus = actionMap[parsed.data.action];
+
+    verificationRequest.set({
+      status: newStatus,
+      reviewedBy: adminGuard.adminId,
+      reviewedAt: new Date(),
+      rejectionReason: parsed.data.action !== "approve" ? (parsed.data.rejectionReason ?? "Details could not be verified.") : null,
+      adminNotes: parsed.data.adminNotes ?? verificationRequest.adminNotes,
+    });
+
+    // Add to history
+    verificationRequest.history.push({
+      action: parsed.data.action === "more_info_required" ? "requested_more_info" : (parsed.data.action === "approve" ? "approved" : "rejected"),
+      timestamp: new Date(),
+      adminId: adminGuard.adminId,
+      notes: parsed.data.adminNotes ?? null,
+    });
+
+    await verificationRequest.save();
+
+    // Update UserModel
+    const userUpdatePayload: any = {
+      verificationStatus: newStatus,
+      verificationAdminNotes: parsed.data.adminNotes ?? null,
+    };
+
     if (parsed.data.action === "approve") {
-      verificationRequest.set({
-        status: "approved",
-        reviewedBy: adminGuard.adminId,
-        reviewedAt: new Date(),
-        rejectionReason: null,
-        adminNotes: parsed.data.adminNotes ?? verificationRequest.adminNotes,
-      });
-
-      await Promise.all([
-        verificationRequest.save(),
-        (async () => {
-          const updatedUser = await UserModel.findByIdAndUpdate(verificationRequest.userId, {
-            $set: {
-              role: "verifiedSeller",
-            },
-          });
-
-          if (!updatedUser) {
-            throw new Error("Failed to update user role");
-          }
-
-          await NotificationModel.create({
-            userId: verificationRequest.userId,
-            title: "Seller Verification Approved!",
-            message: "Congratulations! Your account has been verified. You can now start selling on PawHub.",
-            type: "verification",
-            link: "/seller-dashboard"
-          });
-        })(),
-      ]);
+      userUpdatePayload.role = "verifiedSeller";
+      userUpdatePayload.verifiedAt = new Date();
+      userUpdatePayload.verifiedBy = adminGuard.adminId;
+      userUpdatePayload.verificationRejectionReason = null;
+      userUpdatePayload.storeName = verificationRequest.storeName;
     } else {
-      verificationRequest.set({
-        status: "rejected",
-        reviewedBy: adminGuard.adminId,
-        reviewedAt: new Date(),
-        rejectionReason: parsed.data.rejectionReason ?? "Details could not be verified.",
-        adminNotes: parsed.data.adminNotes ?? verificationRequest.adminNotes,
-      });
-
-      await verificationRequest.save();
+      userUpdatePayload.verificationRejectionReason = parsed.data.rejectionReason ?? "Details could not be verified.";
     }
 
+    await UserModel.findByIdAndUpdate(verificationRequest.userId, { $set: userUpdatePayload });
+
+    // Send Notification
+    let notificationTitle = "";
+    let notificationMessage = "";
+
+    if (parsed.data.action === "approve") {
+      notificationTitle = "Seller Verification Approved!";
+      notificationMessage = "Congratulations! Your account has been verified. You can now start selling on PawHub.";
+    } else if (parsed.data.action === "more_info_required") {
+      notificationTitle = "Verification Needs More Info";
+      notificationMessage = `Please review and update your application. Reason: ${parsed.data.rejectionReason}`;
+    } else {
+      notificationTitle = "Verification Rejected";
+      notificationMessage = `Your verification was rejected. Reason: ${parsed.data.rejectionReason}`;
+    }
+
+    await NotificationModel.create({
+      userId: verificationRequest.userId,
+      title: notificationTitle,
+      message: notificationMessage,
+      type: "verification",
+      link: "/seller-dashboard/verification",
+    });
+
     return NextResponse.json({ request: verificationRequest }, { status: 200 });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
       { message: "Unable to review verification request." },
       { status: 500 },

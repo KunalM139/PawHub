@@ -7,11 +7,12 @@ type UploadToCloudinaryParams = {
   filename: string;
   resourceType: UploadResourceType;
   folder: string;
+  type?: "upload" | "private" | "authenticated";
 };
 
 let configured = false;
 
-function configureCloudinary() {
+export function configureCloudinary() {
   if (configured) {
     return;
   }
@@ -34,11 +35,21 @@ function configureCloudinary() {
   configured = true;
 }
 
+export function getPrivateDownloadUrl(publicId: string, resourceType: "image" | "raw" = "image"): string {
+  configureCloudinary();
+  // Cloudinary generates a time-limited signed URL for private assets
+  return cloudinary.utils.private_download_url(publicId, "", {
+    resource_type: resourceType,
+    expires_at: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour
+  });
+}
+
 export async function uploadToCloudinary({
   fileBuffer,
   filename,
   resourceType,
   folder,
+  type = "upload",
 }: UploadToCloudinaryParams): Promise<UploadApiResponse> {
   configureCloudinary();
 
@@ -48,6 +59,7 @@ export async function uploadToCloudinary({
     public_id: `${Date.now()}-${filename.replace(/\.[^.]+$/, "")}`,
     overwrite: false,
     unique_filename: true,
+    type,
   };
 
   if (resourceType === "image") {

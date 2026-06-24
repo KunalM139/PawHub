@@ -11,6 +11,7 @@ import { ListingDetailGallery } from "@/components/listings/listing-detail-galle
 import { ReportListingForm } from "@/components/listings/report-listing-form";
 import { ReviewForm } from "@/components/listings/review-form";
 import { Container } from "@/components/ui/container";
+import { VerifiedSellerBadge } from "@/components/verified-seller-badge";
 import { authOptions } from "@/lib/auth";
 import { connectToDatabase } from "@/server/db/connect";
 import { FavoriteModel } from "@/server/models/favorite";
@@ -172,9 +173,7 @@ export default async function ListingDetailPage({ params }: ListingDetailPagePro
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                 {listing.isVerifiedSeller ? (
-                  <span className="rounded-full bg-[#e8fff0] px-2.5 py-1 font-semibold text-[#176a37]">
-                    Verified Seller
-                  </span>
+                  <VerifiedSellerBadge withText size="sm" />
                 ) : (
                   <span className="rounded-full bg-[var(--color-surface-muted)] px-2.5 py-1 font-semibold">
                     User

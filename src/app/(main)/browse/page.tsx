@@ -8,6 +8,7 @@ import { buildPublicListingQuery, buildPublicListingSort, parseBrowseFilters } f
 import { ListingModel } from "@/server/models/listing";
 import { Heart, PawPrint, MapPin, CheckCircle } from "lucide-react";
 import { ScrollAnimations } from "@/components/providers/scroll-animations";
+import { VerifiedSellerBadge } from "@/components/verified-seller-badge";
 
 type BrowsePageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -123,9 +124,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                     {listing.breed || listing.petCategory}
                   </span>
                   {listing.isVerifiedSeller && (
-                    <span className="bg-[var(--color-primary)]/10 text-[var(--color-primary)] px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                      <CheckCircle className="size-3.5" /> Verified
-                    </span>
+                    <VerifiedSellerBadge withText size="sm" />
                   )}
                 </div>
               </div>

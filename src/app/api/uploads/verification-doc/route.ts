@@ -48,11 +48,12 @@ export async function POST(request: Request) {
       filename: file.name || `verification-${Date.now()}`,
       resourceType: isImage ? "image" : "raw",
       folder: "pawhub/verification-docs",
+      type: "private",
     });
 
     return NextResponse.json(
       {
-        secureUrl: upload.secure_url,
+        secureUrl: upload.secure_url, // For backwards compatibility if needed
         publicId: upload.public_id,
         resourceType: upload.resource_type,
       },

@@ -12,11 +12,18 @@ const verificationSchema = z.object({
   legalName: z.string().trim().min(2).max(120),
   businessName: z.string().trim().max(120).optional().nullable(),
   phone: z.string().trim().regex(/^\+?[0-9]{10,15}$/),
+  dateOfBirth: z.string().or(z.date()),
+  storeName: z.string().trim().min(2).max(100),
+  address: z.string().trim().max(500),
+  pincode: z.string().trim().max(20),
   city: z.string().trim().min(2).max(80),
   state: z.string().trim().min(2).max(80),
-  idProofUrl: z.string().url(),
-  businessProofUrl: z.string().url().optional().nullable(),
+  idProofUrl: z.string().min(1),
+  businessProofUrl: z.string().min(1).optional().nullable(),
   aboutBusiness: z.string().trim().max(1000).optional().nullable(),
+  gstNumber: z.string().trim().max(50).optional().nullable(),
+  businessRegistrationNumber: z.string().trim().max(100).optional().nullable(),
+  selfieUrl: z.string().min(1).optional().nullable(),
 });
 
 export async function GET() {
@@ -33,13 +40,14 @@ export async function GET() {
       VerificationRequestModel.findOne({ userId: session.user.id })
         .sort({ createdAt: -1 })
         .lean(),
-      UserModel.findById(session.user.id).select("role").lean(),
+      UserModel.findById(session.user.id).select("role verificationStatus storeName").lean(),
     ]);
 
     return NextResponse.json(
       {
         request,
         role: user?.role ?? "user",
+        storeName: user?.storeName,
       },
       { status: 200 },
     );
@@ -79,14 +87,21 @@ export async function POST(request: Request) {
 
     await connectToDatabase();
 
-    const existingPending = await VerificationRequestModel.findOne({
-      userId: session.user.id,
-      status: "pending",
-    })
-      .select("_id")
-      .lean();
+    // Store Name Uniqueness Check
+    const existingStore = await UserModel.findOne({
+      _id: { $ne: session.user.id },
+      storeName: { $regex: new RegExp(`^${parsed.data.storeName}$`, "i") },
+    }).lean();
 
-    if (existingPending) {
+    if (existingStore) {
+      return NextResponse.json({ message: "This Store Name is already taken." }, { status: 409 });
+    }
+
+    const existingRequest = await VerificationRequestModel.findOne({
+      userId: session.user.id,
+    });
+
+    if (existingRequest && existingRequest.status === "pending") {
       return NextResponse.json(
         {
           message: "A verification request is already pending.",
@@ -95,24 +110,58 @@ export async function POST(request: Request) {
       );
     }
 
-    const created = await VerificationRequestModel.create({
-      userId: session.user.id,
+    const payload = {
       legalName: parsed.data.legalName,
       businessName: parsed.data.businessName ?? null,
       phone: parsed.data.phone,
+      dateOfBirth: new Date(parsed.data.dateOfBirth),
+      storeName: parsed.data.storeName,
+      address: parsed.data.address,
+      pincode: parsed.data.pincode,
       city: parsed.data.city,
       state: parsed.data.state,
       idProofUrl: parsed.data.idProofUrl,
       businessProofUrl: parsed.data.businessProofUrl ?? null,
       aboutBusiness: parsed.data.aboutBusiness ?? null,
+      gstNumber: parsed.data.gstNumber ?? null,
+      businessRegistrationNumber: parsed.data.businessRegistrationNumber ?? null,
+      selfieUrl: parsed.data.selfieUrl ?? null,
       status: "pending",
-    });
+    };
 
-    return NextResponse.json({ request: created }, { status: 201 });
-  } catch {
+    const historyEntry = {
+      action: existingRequest ? "resubmitted" : "submitted",
+      timestamp: new Date(),
+    };
+
+    let resultRequest;
+
+    if (existingRequest && (existingRequest.status === "rejected" || existingRequest.status === "more_info_required")) {
+      existingRequest.set(payload);
+      existingRequest.history.push(historyEntry);
+      resultRequest = await existingRequest.save();
+
+      await UserModel.findByIdAndUpdate(session.user.id, {
+        $set: { verificationStatus: "pending" },
+        $inc: { verificationResubmissionCount: 1 },
+      });
+    } else {
+      resultRequest = await VerificationRequestModel.create({
+        userId: session.user.id,
+        ...payload,
+        history: [historyEntry],
+      });
+
+      await UserModel.findByIdAndUpdate(session.user.id, {
+        $set: { verificationStatus: "pending" },
+      });
+    }
+
+    return NextResponse.json({ request: resultRequest }, { status: 201 });
+  } catch (err: any) {
     return NextResponse.json(
       {
-        message: "Unable to submit verification request.",
+        message: err?.message || "Unable to submit verification request.",
       },
       { status: 500 },
     );

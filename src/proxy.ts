@@ -32,8 +32,8 @@ export default withAuth(
 
     // Role-based protection: Seller Dashboard
     if (pathname.startsWith("/seller-dashboard")) {
-      // Allow admin to view seller dashboard as well, but primarily requires verifiedSeller
-      if (role !== "verifiedSeller" && role !== "admin") {
+      // Allow admin to view seller dashboard as well, but primarily requires userType === "seller"
+      if (token?.userType !== "seller" && role !== "admin") {
         return NextResponse.redirect(new URL("/dashboard", req.url));
       }
     }
