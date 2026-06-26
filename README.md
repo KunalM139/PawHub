@@ -128,9 +128,3 @@ Created and maintained by the PawHub Engineering Team. Refer to [CONTRIBUTING.md
 ## 📄 License
 
 This project is licensed under the MIT License.
-
-
-
-ethcttchtchrhchtgcbgtfbtecrhtrbghcrbcbcgbgbtr
-tchtrhbc
-hfgchbgfcb
