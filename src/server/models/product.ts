@@ -58,6 +58,11 @@ const productSchema = new Schema(
       default: true,
       index: true,
     },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected", "archived", "deleted"],
+      default: "approved",
+    },
     averageRating: {
       type: Number,
       default: 0,

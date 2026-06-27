@@ -5,6 +5,7 @@ import { ShoppingCart, Heart, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSocket } from "@/components/providers/socket-provider";
 
 type DashboardTopbarProps = {
   title: string;
@@ -21,6 +22,7 @@ export function DashboardTopbar({
   const [showNotifications, setShowNotifications] = useState(false);
   const pathname = usePathname();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { socket } = useSocket();
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -75,6 +77,22 @@ export function DashboardTopbar({
       window.removeEventListener("notifications-updated", fetchNotifications);
     };
   }, [pathname]);
+
+  // Real-time notifications via Socket.io
+  useEffect(() => {
+    if (!socket) return;
+    
+    function handleNewNotification(newNotification: any) {
+      setNotifications((prev) => [newNotification, ...prev]);
+      // Optional: play a sound or show a toast here
+    }
+
+    socket.on("notification", handleNewNotification);
+    
+    return () => {
+      socket.off("notification", handleNewNotification);
+    };
+  }, [socket]);
 
   // Click outside to close dropdown
   useEffect(() => {
@@ -145,23 +163,27 @@ export function DashboardTopbar({
           )}
         </div>
 
-        <Link href="/dashboard/wishlist" className="relative p-2 text-[var(--color-on-surface-variant)] hover:text-rose-500 hover:bg-[var(--color-surface-container-low)] rounded-full transition-colors group">
-          <span className="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">favorite</span>
-          {wishlistCount > 0 && (
-            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-[var(--color-surface)]">
-              {wishlistCount > 99 ? "99+" : wishlistCount}
-            </span>
-          )}
-        </Link>
-        
-        <Link href="/dashboard/cart" className="relative p-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] hover:bg-[var(--color-surface-container-low)] rounded-full transition-colors group">
-          <span className="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">shopping_cart</span>
-          {cartCount > 0 && (
-            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-primary)] text-[10px] font-bold text-white ring-2 ring-[var(--color-surface)]">
-              {cartCount > 99 ? "99+" : cartCount}
-            </span>
-          )}
-        </Link>
+        {!pathname.startsWith("/admin") && (
+          <>
+            <Link href="/dashboard/wishlist" className="relative p-2 text-[var(--color-on-surface-variant)] hover:text-rose-500 hover:bg-[var(--color-surface-container-low)] rounded-full transition-colors group">
+              <span className="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">favorite</span>
+              {wishlistCount > 0 && (
+                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-[var(--color-surface)]">
+                  {wishlistCount > 99 ? "99+" : wishlistCount}
+                </span>
+              )}
+            </Link>
+            
+            <Link href="/dashboard/cart" className="relative p-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] hover:bg-[var(--color-surface-container-low)] rounded-full transition-colors group">
+              <span className="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">shopping_cart</span>
+              {cartCount > 0 && (
+                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-primary)] text-[10px] font-bold text-white ring-2 ring-[var(--color-surface)]">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
+            </Link>
+          </>
+        )}
       </div>
     </header>
   );

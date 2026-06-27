@@ -1,34 +1,56 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireAdminSession } from "@/lib/admin-auth";
 import { UserModel } from "@/server/models/user";
+import { logAdminActivity } from "@/lib/admin-activity";
 
 const updateUserRoleSchema = z.object({
   userId: z.string().min(1),
   role: z.enum(["user", "verifiedSeller", "admin"]),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const adminGuard = await requireAdminSession();
   if ("response" in adminGuard) {
     return adminGuard.response;
   }
 
   try {
-    const users = await UserModel.find()
-      .sort({ createdAt: -1 })
-      .limit(100)
-      .select("name email role createdAt")
-      .lean();
+    const { searchParams } = new URL(request.url);
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const search = searchParams.get("search") || "";
+    const roleFilter = searchParams.get("role") || "";
 
-    return NextResponse.json({ users }, { status: 200 });
+    const query: any = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (roleFilter) {
+      query.role = roleFilter;
+    }
+
+    const [totalCount, users] = await Promise.all([
+      UserModel.countDocuments(query),
+      UserModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .select("name email role createdAt strikeCount accountStatus image")
+        .lean(),
+    ]);
+
+    return NextResponse.json({ users, totalCount, page, limit }, { status: 200 });
   } catch {
     return NextResponse.json({ message: "Unable to fetch users." }, { status: 500 });
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   const adminGuard = await requireAdminSession();
   if ("response" in adminGuard) {
     return adminGuard.response;
@@ -65,6 +87,18 @@ export async function PATCH(request: Request) {
     if (!updatedUser) {
       return NextResponse.json({ message: "User not found." }, { status: 404 });
     }
+
+    const adminUser = await UserModel.findById(adminGuard.adminId).select("name").lean();
+
+    await logAdminActivity({
+      adminId: adminGuard.adminId,
+      adminName: adminUser?.name || "Admin",
+      action: "USER_PROMOTION",
+      targetId: parsed.data.userId,
+      targetType: "User",
+      notes: `Role changed to ${parsed.data.role}`,
+      req: request,
+    });
 
     return NextResponse.json({ user: updatedUser }, { status: 200 });
   } catch {

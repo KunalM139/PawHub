@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -6,6 +6,7 @@ import { UserModel } from "@/server/models/user";
 import { ModerationLogModel } from "@/server/models/moderation-log";
 import { NotificationModel } from "@/server/models/notification";
 import { logger } from "@/lib/logger";
+import { logAdminActivity } from "@/lib/admin-activity";
 
 const moderationActionSchema = z.object({
   targetUserId: z.string().min(1),
@@ -16,7 +17,7 @@ const moderationActionSchema = z.object({
   reason: z.string().trim().max(1000).optional().nullable(),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const adminGuard = await requireAdminSession();
   if ("response" in adminGuard) {
     return adminGuard.response;
@@ -101,14 +102,30 @@ export async function POST(request: Request) {
       notes: "Manual action from dashboard",
     });
 
+    const adminUser = await UserModel.findById(adminGuard.adminId).select("name").lean();
+    await logAdminActivity({
+      adminId: adminGuard.adminId,
+      adminName: adminUser?.name || "Admin",
+      action: actionType.toUpperCase(),
+      targetId: user._id.toString(),
+      targetType: "User",
+      notes: reason || "Manual action from dashboard",
+      req: request,
+    });
+
     // Send notification if applicable
     if (notifyTitle && user.accountStatus !== "banned") {
-      await NotificationModel.create({
+      const notification = await NotificationModel.create({
         userId: user._id,
         title: notifyTitle,
         message: notifyMessage,
         type: "system"
       });
+
+      const io = (globalThis as any).io;
+      if (io) {
+        io.to(user._id.toString()).emit("notification", notification);
+      }
     }
 
     return NextResponse.json({ success: true, user: { strikeCount: user.strikeCount, accountStatus: user.accountStatus } }, { status: 200 });

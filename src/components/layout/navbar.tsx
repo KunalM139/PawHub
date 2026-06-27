@@ -55,6 +55,11 @@ export function Navbar() {
     : "";
 
   const filteredNavLinks = siteConfig.navLinks.filter((link) => {
+    // Hide customer/seller links from Admins
+    if (user?.role === "admin") {
+      return false; // Admins should not see "Browse Pets", "Pet Products", "Post Listing", "Verify Seller"
+    }
+
     if (link.href === "/seller-verification") {
       return user?.userType !== "petOwner";
     }

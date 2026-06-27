@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -9,6 +9,7 @@ import { ReviewModel } from "@/server/models/review";
 import { ReportModel } from "@/server/models/report";
 import { ModerationLogModel } from "@/server/models/moderation-log";
 import { NotificationModel } from "@/server/models/notification";
+import { logAdminActivity } from "@/lib/admin-activity";
 import { logger } from "@/lib/logger";
 
 const updateReportSchema = z.object({
@@ -19,31 +20,45 @@ const updateReportSchema = z.object({
   actionToTake: z.enum(["none", "warn", "remove_content", "ban"]).optional(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const adminGuard = await requireAdminSession();
   if ("response" in adminGuard) {
     return adminGuard.response;
   }
 
   try {
-    const reports = await ReportModel.find()
-      .sort({ status: 1, createdAt: -1 })
-      .limit(120)
-      .populate("reporterId", "name email")
-      .populate("reportedUserId", "name email accountStatus strikeCount")
-      .lean();
+    const { searchParams } = new URL(request.url);
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const status = searchParams.get("status") || "";
+    const type = searchParams.get("type") || "";
 
-    // Since entityType is polymorphic, we can't cleanly populate a single ref across different collections in one go without Mongoose discriminator magic. 
-    // For the dashboard, we return the entityType/entityId and let the frontend link it or we can manually stitch it.
-    // For simplicity, we just return the raw reports here.
-    return NextResponse.json({ reports }, { status: 200 });
-  } catch (err) {
-    logger.error("GET reports failed:", err);
+    const query: any = {};
+    if (status) {
+      query.status = status;
+    }
+    if (type) {
+      query.type = type;
+    }
+
+    const [totalCount, reports] = await Promise.all([
+      ReportModel.countDocuments(query),
+      ReportModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate("reporterId", "name email")
+        .populate("reportedUserId", "name email strikeCount accountStatus")
+        .lean(),
+    ]);
+
+    return NextResponse.json({ reports, totalCount, page, limit }, { status: 200 });
+  } catch {
     return NextResponse.json({ message: "Unable to fetch reports." }, { status: 500 });
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   const adminGuard = await requireAdminSession();
   if ("response" in adminGuard) {
     return adminGuard.response;
@@ -55,8 +70,11 @@ export async function PATCH(request: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { message: "Invalid payload.", issues: parsed.error.flatten() },
-        { status: 400 }
+        {
+          message: "Invalid payload.",
+          issues: parsed.error.flatten(),
+        },
+        { status: 400 },
       );
     }
 
@@ -67,9 +85,9 @@ export async function PATCH(request: Request) {
 
     report.set({
       status: parsed.data.status,
-      reviewedBy: adminGuard.adminId,
-      reviewedAt: new Date(),
       resolutionNote: parsed.data.resolutionNote ?? null,
+      resolvedBy: adminGuard.adminId,
+      resolvedAt: new Date(),
     });
 
     await report.save();
@@ -122,12 +140,14 @@ export async function PATCH(request: Request) {
           reportedUser.bannedReason = `Accumulated ${reportedUser.strikeCount} strikes. Latest reason: ${statusNote}`;
           moderationAction = "ban";
           
-          await NotificationModel.create({
+          const notification = await NotificationModel.create({
             userId: reportedUser._id,
             title: "Account Permanently Banned",
             message: "Your account has been permanently banned due to repeated severe violations of our Trust & Safety policies.",
             type: "system"
           });
+          const io = (globalThis as any).io;
+          if (io) io.to(reportedUser._id.toString()).emit("notification", notification);
         } else if (reportedUser.strikeCount >= 3 && reportedUser.accountStatus !== "suspended" && reportedUser.accountStatus !== "banned") {
           reportedUser.accountStatus = "suspended";
           const suspendDays = 7;
@@ -137,26 +157,32 @@ export async function PATCH(request: Request) {
           reportedUser.suspensionReason = `Accumulated ${reportedUser.strikeCount} strikes.`;
           moderationAction = "suspend";
 
-          await NotificationModel.create({
+          const notification = await NotificationModel.create({
             userId: reportedUser._id,
             title: "Account Suspended",
             message: `Your account has been suspended for ${suspendDays} days due to accumulating ${reportedUser.strikeCount} strikes.`,
             type: "system"
           });
+          const io = (globalThis as any).io;
+          if (io) io.to(reportedUser._id.toString()).emit("notification", notification);
         } else if (parsed.data.actionToTake === "warn") {
-           await NotificationModel.create({
+           const notification = await NotificationModel.create({
             userId: reportedUser._id,
             title: "Official Warning",
             message: `Your content was flagged. Reason: ${statusNote}. Please adhere to our guidelines.`,
             type: "system"
           });
+          const io = (globalThis as any).io;
+          if (io) io.to(reportedUser._id.toString()).emit("notification", notification);
         } else if (strikeDelta > 0 && reportedUser.accountStatus === "active") {
-           await NotificationModel.create({
+           const notification = await NotificationModel.create({
             userId: reportedUser._id,
             title: "Community Guidelines Strike",
             message: `Your content was removed and you received a strike. Total strikes: ${reportedUser.strikeCount}. Continued violations will result in suspension.`,
             type: "system"
           });
+          const io = (globalThis as any).io;
+          if (io) io.to(reportedUser._id.toString()).emit("notification", notification);
         }
 
         await reportedUser.save();
@@ -183,9 +209,21 @@ export async function PATCH(request: Request) {
        });
     }
 
+    const adminUser = await UserModel.findById(adminGuard.adminId).select("name").lean();
+    await logAdminActivity({
+      adminId: adminGuard.adminId,
+      adminName: adminUser?.name || "Admin",
+      action: "REPORT_RESOLVED",
+      targetId: report._id.toString(),
+      targetType: "Report",
+      notes: `Status: ${parsed.data.status}, Note: ${parsed.data.resolutionNote}`,
+      req: request,
+    });
+
     return NextResponse.json({ report }, { status: 200 });
   } catch (err) {
     logger.error("PATCH report failed:", err);
     return NextResponse.json({ message: "Unable to update report." }, { status: 500 });
   }
 }
+

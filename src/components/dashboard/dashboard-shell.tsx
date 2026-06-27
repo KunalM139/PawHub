@@ -93,10 +93,48 @@ const sellerNav: SidebarGroup[] = [
   },
 ];
 
+const adminNav: SidebarGroup[] = [
+  {
+    title: "Overview",
+    items: [
+      { label: "Dashboard", href: "/admin", icon: "dashboard" },
+      { label: "Activity Log", href: "/admin/activity", icon: "history" },
+    ],
+  },
+  {
+    title: "Marketplace",
+    items: [
+      { label: "Users", href: "/admin/users", icon: "group" },
+      { label: "Verification", href: "/admin/verification", icon: "verified_user" },
+    ],
+  },
+  {
+    title: "Moderation",
+    items: [
+      { label: "Reports", href: "/admin/reports", icon: "report" },
+      { label: "Trust & Safety", href: "/admin/trust-safety", icon: "gavel" },
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      { label: "Analytics", href: "/admin/analytics", icon: "monitoring" },
+      { label: "Notifications", href: "/admin/notifications", icon: "notifications" },
+      { label: "Settings", href: "/admin/settings", icon: "settings" },
+    ],
+  },
+  {
+    title: "Navigation",
+    items: [
+      { label: "Home", href: "/", icon: "home" },
+    ],
+  },
+];
+
 type DashboardShellProps = {
   children: React.ReactNode;
   pageTitle: string;
-  userType: "petOwner" | "seller";
+  userType: "petOwner" | "seller" | "admin";
   userName: string;
   userImage?: string | null;
   userRole: string;
@@ -128,7 +166,7 @@ export function DashboardShell({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const navGroups = userType === "seller" ? sellerNav : petOwnerNav;
+  const navGroups = userRole === "admin" ? adminNav : (userType === "seller" ? sellerNav : petOwnerNav);
 
   return (
     <div className="font-outfit home-theme bg-[var(--color-surface)] text-[var(--color-on-surface)] min-h-screen antialiased flex overflow-hidden">

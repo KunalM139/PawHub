@@ -21,11 +21,20 @@ const pageTitles: Record<string, string> = {
   "/seller-dashboard/analytics": "Analytics",
   "/seller-dashboard/verification": "Verification",
   "/seller-dashboard/settings": "Settings",
+  "/admin": "Admin Dashboard",
+  "/admin/activity": "Activity Log",
+  "/admin/users": "Users Management",
+  "/admin/verification": "Seller Verification",
+  "/admin/reports": "Reports",
+  "/admin/trust-safety": "Trust & Safety",
+  "/admin/analytics": "Analytics",
+  "/admin/notifications": "Notifications",
+  "/admin/settings": "Platform Settings",
 };
 
 type DashboardShellWrapperProps = {
   children: React.ReactNode;
-  userType: "petOwner" | "seller";
+  userType: "petOwner" | "seller" | "admin";
   userName: string;
   userImage: string | null;
   userRole: string;

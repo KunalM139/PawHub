@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { requireAdminSession } from "@/lib/admin-auth";
 import { UserModel } from "@/server/models/user";
 import { VerificationRequestModel } from "@/server/models/verification-request";
 import { NotificationModel } from "@/server/models/notification";
+import { logAdminActivity } from "@/lib/admin-activity";
 
 const reviewVerificationSchema = z.object({
   requestId: z.string().min(1),
@@ -13,20 +14,38 @@ const reviewVerificationSchema = z.object({
   adminNotes: z.string().trim().max(500).optional().nullable(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const adminGuard = await requireAdminSession();
   if ("response" in adminGuard) {
     return adminGuard.response;
   }
 
   try {
-    const requests = await VerificationRequestModel.find()
-      .sort({ createdAt: -1 })
-      .limit(100)
-      .populate("userId", "name email role verificationStatus")
-      .lean();
+    const { searchParams } = new URL(request.url);
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const status = searchParams.get("status") || "";
+    const search = searchParams.get("search") || "";
 
-    return NextResponse.json({ requests }, { status: 200 });
+    const query: any = {};
+    if (status) {
+      query.status = status;
+    }
+    if (search) {
+      query.storeName = { $regex: search, $options: "i" };
+    }
+
+    const [totalCount, requests] = await Promise.all([
+      VerificationRequestModel.countDocuments(query),
+      VerificationRequestModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate("userId", "name email role verificationStatus")
+        .lean(),
+    ]);
+
+    return NextResponse.json({ requests, totalCount, page, limit }, { status: 200 });
   } catch {
     return NextResponse.json(
       { message: "Unable to fetch verification requests." },
@@ -35,7 +54,7 @@ export async function GET() {
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   const adminGuard = await requireAdminSession();
   if ("response" in adminGuard) {
     return adminGuard.response;
@@ -119,7 +138,7 @@ export async function PATCH(request: Request) {
       notificationMessage = `Your verification was rejected. Reason: ${parsed.data.rejectionReason}`;
     }
 
-    await NotificationModel.create({
+    const notification = await NotificationModel.create({
       userId: verificationRequest.userId,
       title: notificationTitle,
       message: notificationMessage,
@@ -127,8 +146,25 @@ export async function PATCH(request: Request) {
       link: "/seller-dashboard/verification",
     });
 
+    const io = (globalThis as any).io;
+    if (io) {
+      io.to(verificationRequest.userId.toString()).emit("notification", notification);
+    }
+
+    const adminUser = await UserModel.findById(adminGuard.adminId).select("name").lean();
+    await logAdminActivity({
+      adminId: adminGuard.adminId,
+      adminName: adminUser?.name || "Admin",
+      action: "VERIFICATION_" + parsed.data.action.toUpperCase(),
+      targetId: verificationRequest._id.toString(),
+      targetType: "VerificationRequest",
+      notes: parsed.data.adminNotes || parsed.data.rejectionReason || "Verification reviewed",
+      req: request,
+    });
+
     return NextResponse.json({ request: verificationRequest }, { status: 200 });
   } catch (error) {
+    console.error("Verification update error:", error);
     return NextResponse.json(
       { message: "Unable to review verification request." },
       { status: 500 },
