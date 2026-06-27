@@ -143,7 +143,7 @@ export function AdminUsersClient({
     },
     {
       header: "Joined",
-      cell: (user) => new Date(user.createdAt).toLocaleDateString(),
+      cell: (user) => new Date(user.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
     },
     {
       header: "Actions",

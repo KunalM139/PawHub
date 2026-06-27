@@ -486,7 +486,7 @@ export function AdminPanelWorkspace({
                   <p className="text-sm font-semibold">Owner: {request.legalName}</p>
                   <p className="text-xs text-gray-600 mt-1">Email: {getUserName(request.userId)}</p>
                   <p className="text-xs text-gray-600">Phone: {request.phone}</p>
-                  <p className="text-xs text-gray-600">DOB: {new Date(request.dateOfBirth).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-600">DOB: {new Date(request.dateOfBirth).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</p>
                   <div className="mt-2 text-xs text-gray-600">
                     <p className="font-semibold">Address:</p>
                     <p>{request.address}</p>

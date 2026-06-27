@@ -47,7 +47,7 @@ export function ProductReviews({ productId }: { productId: string }) {
                           <Star key={star} className={`size-3 ${review.rating >= star ? "fill-amber-400 text-amber-400" : "text-slate-200"}`} />
                         ))}
                       </div>
-                      <span className="text-xs font-semibold text-slate-400">{new Date(review.createdAt).toLocaleDateString()}</span>
+                      <span className="text-xs font-semibold text-slate-400">{new Date(review.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</span>
                     </div>
                   </div>
                 </div>

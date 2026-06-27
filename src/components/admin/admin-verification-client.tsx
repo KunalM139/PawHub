@@ -88,7 +88,7 @@ export function AdminVerificationClient({
     },
     {
       header: "Date",
-      cell: (req) => new Date(req.createdAt).toLocaleDateString(),
+      cell: (req) => new Date(req.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
     },
     {
       header: "Actions",
