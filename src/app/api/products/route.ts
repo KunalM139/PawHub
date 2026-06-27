@@ -95,6 +95,7 @@ export async function POST(request: Request) {
       ...body,
       sellerId: currentUser.id,
       isVerifiedSeller: true,
+      status: "approved",
     });
 
     return NextResponse.json({ product: newProduct }, { status: 201 });

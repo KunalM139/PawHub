@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       sellerId: session.user.id,
       isVerifiedSeller: currentUser.role === "verifiedSeller" || currentUser.role === "admin",
       isPhoneVerified: currentUser.isPhoneVerified,
-      status: "pending",
+      status: (currentUser.role === "verifiedSeller" || currentUser.role === "admin") ? "approved" : "pending",
       isActive: true,
     });
 
