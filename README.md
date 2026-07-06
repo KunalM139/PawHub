@@ -1,5 +1,5 @@
 # 🐾 PawHub
-fgggghededededrdrraawsrrtremm
+
 ![CI/CD Pipeline](https://github.com/KunalM139/PawHub/actions/workflows/ci.yml/badge.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?style=flat&logo=node.js&logoColor=white)
