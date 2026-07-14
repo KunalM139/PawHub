@@ -218,13 +218,16 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
             </p>
           </div>
         ) : (
-          messages.map((msg) => {
-            const isSender = typeof msg.senderId === "string" 
-                ? msg.senderId === currentUserId 
-                : msg.senderId._id === currentUserId;
+          messages.filter(msg => msg && typeof msg === "object").map((msg, idx) => {
+            const senderIdObj = msg.senderId;
+            const senderIdStr = typeof senderIdObj === "object" && senderIdObj !== null 
+                ? (senderIdObj as any)._id 
+                : senderIdObj;
+            const isSender = String(senderIdStr) === String(currentUserId);
+            const msgKey = msg._id || \`temp-\${idx}\`;
 
             return (
-              <div key={msg._id} className={cn("flex", isSender ? "justify-end" : "justify-start")}>
+              <div key={msgKey} className={cn("flex", isSender ? "justify-end" : "justify-start")}>
                 <div
                   className={cn(
                     "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm",
@@ -235,10 +238,10 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
                 >
                   <p className="whitespace-pre-wrap break-words">{msg.body}</p>
                   <div className={cn("mt-1 flex items-center justify-end gap-1 text-[9px] font-medium tracking-wide uppercase", isSender ? "text-white/70" : "text-[var(--color-foreground-subtle)]")}>
-                    {new Date(msg.createdAt).toLocaleTimeString("en-IN", {
+                    {msg.createdAt && !isNaN(new Date(msg.createdAt).getTime()) ? new Date(msg.createdAt).toLocaleTimeString("en-IN", {
                       hour: "2-digit",
                       minute: "2-digit",
-                    })}
+                    }) : ""}
                     {isSender && (
                       msg.status === "read" ? (
                         <CheckCheck className="size-3 text-blue-300" />
