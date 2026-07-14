@@ -101,7 +101,7 @@ export async function POST(request: Request) {
 
     await notifyAdmins(
       "New Product Listing",
-      \`\${session.user.name || "A user"} created a new product: \${body.title}\`,
+      `${currentUser.name || "A user"} created a new product: ${body.title}`,
       "/admin/products"
     );
 

@@ -66,7 +66,7 @@ export default async function MessagesPage() {
     const customerIdStr = getId(customer);
     const listingIdStr = getId(msg.listingId);
     
-    const convId = \`\${listingIdStr}_\${customerIdStr}\`;
+    const convId = `${listingIdStr}_${customerIdStr}`;
 
     if (!conversationMap.has(convId)) {
       conversationMap.set(convId, {

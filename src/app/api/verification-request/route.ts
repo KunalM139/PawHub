@@ -160,7 +160,7 @@ export async function POST(request: Request) {
 
     await notifyAdmins(
       "New Verification Request",
-      \`\${parsed.data.storeName} has submitted a verification request.\`,
+      `${parsed.data.storeName} has submitted a verification request.`,
       "/admin/verification-requests"
     );
 

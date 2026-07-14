@@ -13,6 +13,7 @@ type Message = {
   receiverId: { _id: string; name: string } | string;
   createdAt: string;
   status: "sent" | "delivered" | "read";
+  isEdited?: boolean;
 };
 
 type ChatWidgetProps = {
@@ -277,7 +278,7 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
                 ? (senderIdObj as any)._id 
                 : senderIdObj;
             const isSender = String(senderIdStr) === String(currentUserId);
-            const msgKey = msg._id || \`temp-\${idx}\`;
+            const msgKey = msg._id || `temp-${idx}`;
 
             return (
               <div key={msgKey} className={cn("flex group", isSender ? "justify-end" : "justify-start")}>

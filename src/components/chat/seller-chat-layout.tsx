@@ -33,7 +33,7 @@ export function SellerChatLayout({ initialConversations, currentUserId }: Seller
     if (confirm("Are you sure you want to delete this entire conversation? It will be removed from your view.")) {
       try {
         setIsDeleting(conversation.id);
-        const res = await fetch(\`/api/messages/conversation?listingId=\${conversation.listingId._id}&customerId=\${conversation.customerId._id}\`, {
+        const res = await fetch(`/api/messages/conversation?listingId=${conversation.listingId._id}&customerId=${conversation.customerId._id}`, {
           method: "DELETE"
         });
         

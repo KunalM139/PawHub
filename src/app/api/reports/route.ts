@@ -105,7 +105,7 @@ export async function POST(request: Request) {
 
     await notifyAdmins(
       "New User Report",
-      \`\${session.user.name || "A user"} reported a \${entityType}.\`,
+      `${session.user.name || "A user"} reported a ${entityType}.`,
       "/admin/reports"
     );
 

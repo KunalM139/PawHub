@@ -122,7 +122,7 @@ export async function POST(request: Request) {
 
     await notifyAdmins(
       "New Pet Listing",
-      \`\${session.user.name || "A user"} created a new listing: \${parsed.data.title}\`,
+      `${session.user.name || "A user"} created a new listing: ${parsed.data.title}`,
       "/admin/listings"
     );
 

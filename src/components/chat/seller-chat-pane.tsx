@@ -41,7 +41,7 @@ export function SellerChatPane({ listingId, listingTitle, customerId, customerNa
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(\`/api/messages?listingId=\${listingId}\`);
+      const res = await fetch(`/api/messages?listingId=${listingId}`);
       if (res.ok) {
         const data = await res.json();
         // Filter messages for this specific customer
@@ -140,7 +140,7 @@ export function SellerChatPane({ listingId, listingTitle, customerId, customerNa
       // Handle Edit
       setIsSending(true);
       try {
-        const res = await fetch(\`/api/messages/\${editingMessageId}\`, {
+        const res = await fetch(`/api/messages/${editingMessageId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ body: trimmed }),
@@ -186,7 +186,7 @@ export function SellerChatPane({ listingId, listingTitle, customerId, customerNa
   const handleUnsend = async (msgId: string) => {
     if (!confirm("Unsend this message? It will be deleted for everyone.")) return;
     try {
-      const res = await fetch(\`/api/messages/\${msgId}\`, { method: "DELETE" });
+      const res = await fetch(`/api/messages/${msgId}`, { method: "DELETE" });
       if (res.ok) {
         setMessages(prev => prev.filter(m => m._id !== msgId));
       }
@@ -231,7 +231,7 @@ export function SellerChatPane({ listingId, listingTitle, customerId, customerNa
             const senderIdObj = msg.senderId;
             const senderIdStr = typeof senderIdObj === "object" && senderIdObj !== null ? (senderIdObj as any)._id : senderIdObj;
             const isSender = String(senderIdStr) === String(currentUserId);
-            const msgKey = msg._id || \`temp-\${idx}\`;
+            const msgKey = msg._id || `temp-${idx}`;
 
             return (
               <div key={msgKey} className={cn("flex group", isSender ? "justify-end" : "justify-start")}>
