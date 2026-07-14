@@ -34,8 +34,8 @@ export function AdminTrustSafetyClient({
   }
 
   async function takeAction(targetUserId: string, actionType: string) {
-    const reason = prompt(`Reason for ${actionType}:`);
-    if (!reason) return;
+    const reason = prompt(`Reason for ${actionType} (optional):`);
+    if (reason === null) return; // Cancelled
 
     setIsUpdating(true);
     try {

@@ -128,7 +128,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, user: { strikeCount: user.strikeCount, accountStatus: user.accountStatus } }, { status: 200 });
+    return NextResponse.json({ 
+      success: true, 
+      user: { 
+        strikeCount: user.strikeCount, 
+        accountStatus: user.accountStatus,
+        warningCount: user.warningCount 
+      } 
+    }, { status: 200 });
   } catch (err) {
     logger.error("POST manual moderation failed:", err);
     return NextResponse.json({ message: "Unable to execute moderation action." }, { status: 500 });
