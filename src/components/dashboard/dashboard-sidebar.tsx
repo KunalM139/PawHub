@@ -67,7 +67,7 @@ export function DashboardSidebar({
           type="button"
           onClick={onToggle}
           className={cn(
-            "absolute -right-3.5 top-6 z-50 hidden size-7 items-center justify-center rounded-full border border-[var(--color-outline-variant)]/30 bg-[var(--color-surface)] text-[var(--color-on-surface-variant)] shadow-sm transition hover:bg-[var(--color-surface-container-high)] lg:inline-flex",
+            "absolute -right-3.5 top-6 z-50 inline-flex size-7 items-center justify-center rounded-full border border-[var(--color-outline-variant)]/30 bg-[var(--color-surface)] text-[var(--color-on-surface-variant)] shadow-sm transition hover:bg-[var(--color-surface-container-high)]",
             collapsed && "rotate-180"
           )}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
