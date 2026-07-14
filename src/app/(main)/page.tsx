@@ -7,13 +7,22 @@ import { CtaBanner } from "@/components/home/cta-banner";
 import { FaqSection } from "@/components/home/faq-section";
 import { ScrollAnimations } from "@/components/providers/scroll-animations";
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+
 export const metadata: Metadata = {
   title: "Find Dogs & Cats for Sale and Adoption in India",
   description:
     "Discover verified dog and cat listings across India for sale, adoption, and responsible rehoming on PawHub.",
 };
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  if (session?.user?.role === "admin") {
+    redirect("/admin");
+  }
+
   return (
     <div className="font-outfit home-theme pb-8 bg-[var(--color-surface)] text-[var(--color-on-surface)] selection:bg-[var(--color-primary)]/20 selection:text-[var(--color-primary)] overflow-hidden">
       <ScrollAnimations />

@@ -123,12 +123,6 @@ const adminNav: SidebarGroup[] = [
       { label: "Settings", href: "/admin/settings", icon: "settings" },
     ],
   },
-  {
-    title: "Navigation",
-    items: [
-      { label: "Home", href: "/", icon: "home" },
-    ],
-  },
 ];
 
 type DashboardShellProps = {
