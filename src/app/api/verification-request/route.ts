@@ -7,6 +7,7 @@ import { connectToDatabase } from "@/server/db/connect";
 import { UserModel } from "@/server/models/user";
 import { VerificationRequestModel } from "@/server/models/verification-request";
 import { verificationSubmitRateLimit, checkRateLimit } from "@/lib/ratelimit";
+import { notifyAdmins } from "@/lib/notify-admins";
 
 const verificationSchema = z.object({
   legalName: z.string().trim().min(2).max(120),
@@ -156,6 +157,12 @@ export async function POST(request: Request) {
         $set: { verificationStatus: "pending" },
       });
     }
+
+    await notifyAdmins(
+      "New Verification Request",
+      \`\${parsed.data.storeName} has submitted a verification request.\`,
+      "/admin/verification-requests"
+    );
 
     return NextResponse.json({ request: resultRequest }, { status: 201 });
   } catch (err: any) {

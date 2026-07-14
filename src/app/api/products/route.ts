@@ -4,6 +4,7 @@ import { ProductModel } from "@/server/models/product";
 import { getCurrentUser } from "@/lib/auth";
 import { searchProductsRateLimit, productCreateRateLimit, getIp, checkRateLimit } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
+import { notifyAdmins } from "@/lib/notify-admins";
 
 export async function GET(request: Request) {
   try {
@@ -97,6 +98,12 @@ export async function POST(request: Request) {
       isVerifiedSeller: true,
       status: "approved",
     });
+
+    await notifyAdmins(
+      "New Product Listing",
+      \`\${session.user.name || "A user"} created a new product: \${body.title}\`,
+      "/admin/products"
+    );
 
     return NextResponse.json({ product: newProduct }, { status: 201 });
   } catch (error: any) {

@@ -7,6 +7,7 @@ import { connectToDatabase } from "@/server/db/connect";
 import { buildPublicListingQuery, buildPublicListingSort, parseBrowseFilters } from "@/server/listings/browse-query";
 import { ListingModel } from "@/server/models/listing";
 import { UserModel } from "@/server/models/user";
+import { notifyAdmins } from "@/lib/notify-admins";
 import { searchListingsRateLimit, listingCreateRateLimit, getIp, checkRateLimit } from "@/lib/ratelimit";
 
 export async function GET(request: Request) {
@@ -118,6 +119,12 @@ export async function POST(request: Request) {
       status: (currentUser.role === "verifiedSeller" || currentUser.role === "admin") ? "approved" : "pending",
       isActive: true,
     });
+
+    await notifyAdmins(
+      "New Pet Listing",
+      \`\${session.user.name || "A user"} created a new listing: \${parsed.data.title}\`,
+      "/admin/listings"
+    );
 
     return NextResponse.json({ listing }, { status: 201 });
   } catch {

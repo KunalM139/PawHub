@@ -10,6 +10,7 @@ import { ProductModel } from "@/server/models/product";
 import { UserModel } from "@/server/models/user";
 import { MessageModel } from "@/server/models/message";
 import { ReviewModel } from "@/server/models/review";
+import { notifyAdmins } from "@/lib/notify-admins";
 import { ReportModel } from "@/server/models/report";
 import { authRateLimit } from "@/lib/ratelimit";
 
@@ -101,6 +102,12 @@ export async function POST(request: Request) {
       details: parsed.data.details ?? null,
       status: "open",
     });
+
+    await notifyAdmins(
+      "New User Report",
+      \`\${session.user.name || "A user"} reported a \${entityType}.\`,
+      "/admin/reports"
+    );
 
     return NextResponse.json({ report }, { status: 201 });
   } catch (error) {
