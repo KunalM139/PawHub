@@ -65,16 +65,22 @@ export async function POST(request: NextRequest) {
         user.accountStatus = "active";
         user.suspendedUntil = null;
         user.suspensionReason = null;
+        notifyTitle = "Account Unsuspended";
+        notifyMessage = "Your account has been unsuspended. You can now access your dashboard.";
       }
     } else if (actionType === "ban") {
       user.accountStatus = "banned";
       user.bannedAt = new Date();
       user.bannedReason = reason;
+      notifyTitle = "Account Permanently Banned";
+      notifyMessage = `Your account has been permanently banned. Reason: ${reason}`;
     } else if (actionType === "unban") {
       if (user.accountStatus === "banned") {
         user.accountStatus = "active";
         user.bannedAt = null;
         user.bannedReason = null;
+        notifyTitle = "Account Unbanned";
+        notifyMessage = "Your account has been unbanned. You can now access your dashboard.";
       }
     } else if (actionType === "warn") {
       user.warningCount += 1;
@@ -82,8 +88,8 @@ export async function POST(request: NextRequest) {
       notifyMessage = `You have received a warning from moderation. Reason: ${reason}. Please follow our community guidelines.`;
     }
 
-    // Process auto-bans if strikes exceed limits during manual addition
-    if (user.strikeCount >= 5 && user.accountStatus !== "banned") {
+    // Process auto-bans only when adding strikes
+    if (actionType === "add_strike" && user.strikeCount >= 5 && user.accountStatus !== "banned") {
       user.accountStatus = "banned";
       user.bannedAt = new Date();
       user.bannedReason = "Accumulated 5 or more strikes.";
@@ -114,7 +120,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Send notification if applicable
-    if (notifyTitle && user.accountStatus !== "banned") {
+    if (notifyTitle) {
       const notification = await NotificationModel.create({
         userId: user._id,
         title: notifyTitle,
