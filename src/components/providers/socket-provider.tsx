@@ -47,6 +47,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       setOnlineUsers(users);
     });
 
+    socketInstance.on("account-updated", () => {
+      window.location.reload();
+    });
+
     setSocket(socketInstance);
 
     return () => {

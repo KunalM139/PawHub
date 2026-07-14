@@ -125,6 +125,12 @@ export async function POST(request: NextRequest) {
       const io = (globalThis as any).io;
       if (io) {
         io.to(user._id.toString()).emit("notification", notification);
+        io.to(user._id.toString()).emit("account-updated", { action: actionType });
+      }
+    } else {
+      const io = (globalThis as any).io;
+      if (io) {
+        io.to(user._id.toString()).emit("account-updated", { action: actionType });
       }
     }
 
