@@ -29,7 +29,10 @@ export async function GET(request: Request) {
     const listingId = searchParams.get("listingId");
 
     const query: Record<string, unknown> = {
-      $or: [{ senderId: session.user.id }, { receiverId: session.user.id }],
+      $or: [
+        { senderId: session.user.id, deletedBySender: { $ne: true } }, 
+        { receiverId: session.user.id, deletedByReceiver: { $ne: true } }
+      ],
     };
 
     if (listingId && Types.ObjectId.isValid(listingId)) {

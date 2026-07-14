@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Maximize2, Minimize2, Send, X, MessageSquare, Loader2, Check, CheckCheck } from "lucide-react";
+import { Maximize2, Minimize2, Send, X, MessageSquare, Loader2, Check, CheckCheck, Edit2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSocket } from "@/components/providers/socket-provider";
 import { logger } from "@/lib/logger";
@@ -88,10 +88,24 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
       }
     });
 
+    socket.on("message-edited", (data: any) => {
+      if (data.listingId === listingId) {
+        setMessages(prev => prev.map(m => m._id === data._id ? { ...m, body: data.body, isEdited: true } : m));
+      }
+    });
+
+    socket.on("message-deleted", (data: any) => {
+      if (data.listingId === listingId) {
+        setMessages(prev => prev.filter(m => m._id !== data.messageId));
+      }
+    });
+
     return () => {
       socket.off("receive-message");
       socket.off("messages-read");
       socket.off("typing");
+      socket.off("message-edited");
+      socket.off("message-deleted");
     };
   }, [socket, listingId, receiverId, currentUserId]);
 
@@ -112,10 +126,35 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
     }
   }, [messages, isOpen, isMaximized]);
 
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = inputValue.trim();
     if (!trimmed || isSending) return;
+
+    if (editingMessageId) {
+      // Handle Edit
+      setIsSending(true);
+      try {
+        const res = await fetch(`/api/messages/${editingMessageId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ body: trimmed }),
+        });
+        if (res.ok) {
+          const { data } = await res.json();
+          setMessages(prev => prev.map(m => m._id === editingMessageId ? { ...m, body: data.body, isEdited: true } : m));
+          setInputValue("");
+          setEditingMessageId(null);
+        }
+      } catch (err) {
+        logger.error("Failed to edit message", err);
+      } finally {
+        setIsSending(false);
+      }
+      return;
+    }
 
     setIsSending(true);
     try {
@@ -127,14 +166,28 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
 
       if (res.ok) {
         const responseData = await res.json();
-        setMessages((prev) => [...prev, responseData.data]);
-        
+        const newMsg = responseData.data || responseData.message;
+        if (newMsg && typeof newMsg === "object") {
+          setMessages((prev) => [...prev, newMsg]);
+        }
         setInputValue("");
       }
     } catch (err) {
       logger.error("Failed to send message", err);
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleUnsend = async (msgId: string) => {
+    if (!confirm("Unsend this message? It will be deleted for everyone.")) return;
+    try {
+      const res = await fetch(`/api/messages/${msgId}`, { method: "DELETE" });
+      if (res.ok) {
+        setMessages(prev => prev.filter(m => m._id !== msgId));
+      }
+    } catch (err) {
+      logger.error("Failed to delete message", err);
     }
   };
 
@@ -227,7 +280,17 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
             const msgKey = msg._id || \`temp-\${idx}\`;
 
             return (
-              <div key={msgKey} className={cn("flex", isSender ? "justify-end" : "justify-start")}>
+              <div key={msgKey} className={cn("flex group", isSender ? "justify-end" : "justify-start")}>
+                {isSender && (
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center mr-2 gap-1">
+                    <button onClick={() => { setEditingMessageId(msg._id); setInputValue(msg.body); }} className="p-1 hover:bg-gray-200 rounded text-gray-500" title="Edit">
+                      <Edit2 className="w-3 h-3" />
+                    </button>
+                    <button onClick={() => handleUnsend(msg._id)} className="p-1 hover:bg-red-100 rounded text-red-500" title="Unsend">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
                 <div
                   className={cn(
                     "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm",
@@ -238,6 +301,7 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
                 >
                   <p className="whitespace-pre-wrap break-words">{msg.body}</p>
                   <div className={cn("mt-1 flex items-center justify-end gap-1 text-[9px] font-medium tracking-wide uppercase", isSender ? "text-white/70" : "text-[var(--color-foreground-subtle)]")}>
+                    {msg.isEdited && <span className="mr-1 lowercase italic opacity-80">(edited)</span>}
                     {msg.createdAt && !isNaN(new Date(msg.createdAt).getTime()) ? new Date(msg.createdAt).toLocaleTimeString("en-IN", {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -269,6 +333,12 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
 
       {/* Input Area */}
       <div className="shrink-0 bg-white p-3 border-t border-black/5">
+        {editingMessageId && (
+          <div className="flex items-center justify-between mb-2 px-2 text-xs font-semibold text-[var(--color-primary)]">
+            <span>Editing message...</span>
+            <button onClick={() => { setEditingMessageId(null); setInputValue(""); }} className="hover:underline">Cancel</button>
+          </div>
+        )}
         <form onSubmit={handleSend} className="flex items-end gap-2">
           <textarea
             value={inputValue}
@@ -284,7 +354,7 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
                 void handleSend(e);
               }
             }}
-            placeholder="Type your message..."
+            placeholder={editingMessageId ? "Edit your message..." : "Type your message..."}
             className="max-h-32 min-h-[44px] w-full resize-none rounded-xl border border-black/10 bg-[var(--color-surface-muted)] px-3 py-2.5 text-sm outline-none transition focus:border-[var(--color-primary)] focus:bg-white focus:ring-1 focus:ring-[var(--color-primary)]"
             rows={1}
           />
