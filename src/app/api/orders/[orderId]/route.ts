@@ -141,13 +141,21 @@ export async function PATCH(
           });
         }
         else if (status === "cancelled") { // Seller manually cancelling after approval
+          const oldStatus = order.status;
           order.status = "cancelled";
-          if (order.status === "approved" || order.status === "shipped") {
+          if (oldStatus === "approved" || oldStatus === "shipped") {
             const ProductModel = mongoose.models.Product;
             await ProductModel.findByIdAndUpdate(order.productId._id, {
               $inc: { stockQuantity: order.quantity }
             });
           }
+          await NotificationModel.create({
+            userId: order.buyerId,
+            title: "Order Cancelled",
+            message: `Your order for ${order.productId.title} was cancelled by the seller.`,
+            type: "order",
+            link: "/dashboard/orders"
+          });
         }
       }
 

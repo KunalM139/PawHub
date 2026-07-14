@@ -126,8 +126,8 @@ export function ChatWidget({ listingId, receiverId, receiverName, currentUserId,
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setMessages((prev) => [...prev, data.message]);
+        const responseData = await res.json();
+        setMessages((prev) => [...prev, responseData.data]);
         
         setInputValue("");
       }

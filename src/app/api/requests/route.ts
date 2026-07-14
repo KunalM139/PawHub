@@ -109,6 +109,14 @@ export async function POST(request: Request) {
       status: "pending",
     });
 
+    await NotificationModel.create({
+      userId: listing.sellerId,
+      title: "New Pet Inquiry",
+      message: `${session.user.name || "A customer"} has sent an inquiry for your listing.`,
+      type: "inquiry",
+      link: "/seller-dashboard/requests"
+    });
+
     return NextResponse.json({ interestRequest }, { status: 201 });
   } catch (error) {
     logger.error("POST /api/requests error:", error);
